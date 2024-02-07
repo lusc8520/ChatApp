@@ -13,12 +13,6 @@ namespace de.hsfl.vs.hul.chatApp.client.View
         public MainWindow()
         {
             InitializeComponent();
-            DuplexChannelFactory<IChatService> factory = new DuplexChannelFactory<IChatService>(
-                new InstanceContext(new ChatClient()),
-                new NetTcpBinding(),
-                "net.tcp://localhost:9000/chatApp");
-            IChatService service = factory.CreateChannel();
-            service.Connect();
         }
         
         private void TopBarClick(object sender, MouseButtonEventArgs e)
