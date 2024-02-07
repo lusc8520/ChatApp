@@ -5,8 +5,7 @@
              xmlns:view="clr-namespace:de.hsfl.vs.hul.chatApp.client.View"
              StartupUri="/View/MainWindow.xaml">
     <Application.Resources>
-         <viewModels:ViewModelLocator x:Key="ViewModelLocator"></viewModels:ViewModelLocator>
-        
+        <viewModels:MainViewModel x:Key="MainViewModel"></viewModels:MainViewModel>
         <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
             <view:LoginView></view:LoginView>
         </DataTemplate>

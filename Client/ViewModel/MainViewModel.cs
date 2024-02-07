@@ -1,25 +1,30 @@
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System;
 using System.ServiceModel;
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using de.hsfl.vs.hul.chatApp.client.Navigation;
 using de.hsfl.vs.hul.chatApp.contract;
 
 namespace de.hsfl.vs.hul.chatApp.client.ViewModel;
 
-
 public partial class MainViewModel : ViewModelBase
 {
-      [ObservableProperty] private string _testString;
+      private readonly LoginViewModel _loginViewModel = new();
+      private readonly RegisterViewModel _registerViewModel = new();
 
-      // [ObservableProperty]
-      // private ViewModelBase _currentView;
-      //public Navigator Navigator => Navigator.Instance;
+       private ViewModelBase _currentView;
+
+       public ViewModelBase CurrentView
+       {
+             get => _currentView;
+             set
+             {
+                   _currentView = value;
+                   OnPropertyChanged();
+             }
+       }
 
       public MainViewModel()
       {
+            CurrentView = _loginViewModel; // set default navigation
             DuplexChannelFactory<IChatService> factory = new DuplexChannelFactory<IChatService>(
                   new InstanceContext(new ChatClient()),
                   new NetTcpBinding(),
@@ -28,19 +33,15 @@ public partial class MainViewModel : ViewModelBase
             service.Connect();
       }
 
-      // [RelayCommand]
-      // private void NavigateToLogin()
-      // {
-      //       //Navigator.CurrentView = ViewModelLocator.LoginViewModel;
-      //       //CurrentView = ViewModelLocator.LoginViewModel;
-      //       CurrentView = ViewModelLocator.LoginViewModel;
-      // }
+      [RelayCommand]
+      private void NavigateToLogin()
+      {
+            CurrentView = _loginViewModel;
+      }
       
-      // [RelayCommand]
-      // private void NavigateToRegister()
-      // {
-      //       //Navigator.CurrentView = ViewModelLocator.RegisterViewModel;
-      //       //CurrentView = ViewModelLocator.RegisterViewModel;
-      //       CurrentView = ViewModelLocator.RegisterViewModel;
-      // }
+      [RelayCommand]
+      private void NavigateToRegister()
+      {
+            CurrentView = _registerViewModel;
+      }
 }
