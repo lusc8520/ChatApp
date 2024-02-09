@@ -5,8 +5,72 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:de.hsfl.vs.hul.chatApp.client.View"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="300">
-    <Grid>
-        <Label Content="I am Login"></Label>
+             d:DesignHeight="500" d:DesignWidth="800"
+             DataContext="{Binding Source={StaticResource MainViewModel},
+              Path=LoginViewModel}">
+    <Grid Background="#4042b1">
+        <Border Background="#313338"
+                Width="720"
+                Height="395"
+                BorderBrush="Black"
+                BorderThickness="0.5"
+                CornerRadius="8">
+            <StackPanel HorizontalAlignment="Center"
+                        Width="300">
+                <Label Content="Hello :)"
+                       Foreground="White"
+                       FontSize="35"
+                       Margin="0, 5, 0, 0"
+                       HorizontalAlignment="Center"/>
+                <Label Content="Username"
+                       Foreground="Gray"
+                       FontSize="20"/>
+                <TextBox Width="300"
+                         FontSize="25"
+                         Background="#1e1f22"
+                         Foreground="White"
+                         BorderBrush="Black"
+                         Padding="1"
+                         MaxLength="20"
+                         Text="{Binding Username}"/>
+                <Label Content="Password"
+                       Foreground="Gray"
+                       FontSize="20"/>
+                <PasswordBox Width="300"
+                             FontSize="25"
+                             Background="#1e1f22"
+                             Foreground="White"
+                             BorderBrush="Black"
+                             Padding="1"
+                             MaxLength="20"
+                             Name="PasswordBox"/>
+                <Button Content="Login"
+                        Margin="0, 25, 0, 15"
+                        BorderBrush="Black"
+                        FontSize="25"
+                        Padding="3"
+                        Style="{StaticResource CustomButtonStyle}"
+                        Command="{Binding LoginCommand}"
+                        CommandParameter="{Binding ElementName=PasswordBox}">
+                </Button>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Not Registered Yet?"
+                           Foreground="Gray"
+                           FontSize="15"></Label>
+                    <Button Content="Register 🡆" Background="Transparent"
+                            Foreground="#8a8dff"
+                            FontSize="15"
+                            Style="{StaticResource CustomButtonStyle}"
+                            Margin="5, 0, 0, 0"
+                            Command="{Binding MainViewModel.NavigateToRegisterCommand }">
+                    </Button>
+                </StackPanel>
+                <TextBlock
+                    Text="{Binding ServerMessage}"
+                    Foreground="LightCoral"
+                    FontSize="20"
+                    TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

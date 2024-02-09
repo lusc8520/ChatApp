@@ -12,6 +12,7 @@
         <AssemblyName>Contract</AssemblyName>
         <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
+        <LangVersion>default</LangVersion>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
@@ -36,10 +37,13 @@
         <Reference Include="System"/>
         <Reference Include="System.Core"/>
         <Reference Include="System.Data"/>
+        <Reference Include="System.Runtime.Serialization" />
         <Reference Include="System.ServiceModel" />
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="DTO\LoginResponse.cs" />
+        <Compile Include="DTO\User.cs" />
         <Compile Include="IChatClient.cs" />
         <Compile Include="IChatService.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>

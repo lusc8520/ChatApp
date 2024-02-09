@@ -1,11 +1,33 @@
-﻿using System.ServiceModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.ServiceModel;
+using de.hsfl.vs.hul.chatApp.contract.DTO;
 
-namespace de.hsfl.vs.hul.chatApp.contract
+namespace de.hsfl.vs.hul.chatApp.contract;
+
+[ServiceKnownType("GetKnownTypes", typeof(Helper))]
+[ServiceContract(CallbackContract = typeof(IChatClient))]
+public interface IChatService
 {
-    [ServiceContract(CallbackContract = typeof(IChatClient))]
-    public interface IChatService
+    [OperationContract(IsOneWay = true)]
+    void Connect(); // erstmal nur zum testen des servers
+
+    [OperationContract]
+    LoginResponse Login(string username, string password);
+
+    [OperationContract]
+    LoginResponse Register(string username, string password);
+}
+
+static class Helper
+{
+    public static IEnumerable<Type> GetKnownTypes(ICustomAttributeProvider provider)
     {
-        [OperationContract(IsOneWay = true)]
-        void Connect(); // erstmal nur zum testen des servers
+        return new List<Type>
+        {
+            typeof(LoginResponse),
+            typeof(User)
+        };
     }
 }

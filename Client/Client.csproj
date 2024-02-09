@@ -42,7 +42,9 @@
         <Reference Include="System.Core"/>
         <Reference Include="System.Data"/>
         <Reference Include="System.Numerics" />
+        <Reference Include="System.Runtime.Serialization" />
         <Reference Include="System.ServiceModel" />
+        <Reference Include="System.Windows" />
         <Reference Include="System.Xml"/>
         <Reference Include="System.Xaml">
             <RequiredTargetFramework>4.0</RequiredTargetFramework>
@@ -61,11 +63,13 @@
             <SubType>Code</SubType>
         </Compile>
         <Compile Include="ChatClient.cs" />
-        <Compile Include="Navigation\Navigator.cs" />
+        <Compile Include="ViewModel\ChatViewModel.cs" />
         <Compile Include="ViewModel\LoginViewModel.cs" />
         <Compile Include="ViewModel\MainViewModel.cs" />
         <Compile Include="ViewModel\RegisterViewModel.cs" />
-        <Compile Include="ViewModel\ViewModelBase.cs" />
+        <Compile Include="View\ChatView.xaml.cs">
+          <DependentUpon>ChatView.xaml</DependentUpon>
+        </Compile>
         <Compile Include="View\LoginView.xaml.cs">
           <DependentUpon>LoginView.xaml</DependentUpon>
         </Compile>
@@ -95,6 +99,7 @@
       <Folder Include="Model\" />
     </ItemGroup>
     <ItemGroup>
+      <Page Include="View\ChatView.xaml" />
       <Page Include="View\LoginView.xaml" />
       <Page Include="View\MainWindow.xaml">
         <Generator>MSBuild:Compile</Generator>
@@ -117,6 +122,9 @@
       <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
       <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
       <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Include="App.config" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
         <!-- Work around https://github.com/dotnet/wpf/issues/6792 -->

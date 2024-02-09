@@ -5,7 +5,9 @@
              xmlns:view="clr-namespace:de.hsfl.vs.hul.chatApp.client.View"
              StartupUri="/View/MainWindow.xaml">
     <Application.Resources>
+        
         <viewModels:MainViewModel x:Key="MainViewModel"></viewModels:MainViewModel>
+        
         <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
             <view:LoginView></view:LoginView>
         </DataTemplate>
@@ -13,6 +15,32 @@
         <DataTemplate DataType="{x:Type viewModels:RegisterViewModel}">
             <view:RegisterView></view:RegisterView>
         </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type viewModels:ChatViewModel}">
+            <view:ChatView></view:ChatView>
+        </DataTemplate>
+        
+        <!-- Button Style -->
+        <Style TargetType="Button" x:Key="CustomButtonStyle">
+            <Setter Property="Background" Value="#4042b1"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="ClickMode" Value="Press"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#373999"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         
     </Application.Resources>
 </Application>

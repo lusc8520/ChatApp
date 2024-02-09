@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Input;
 using System.ServiceModel;
 using de.hsfl.vs.hul.chatApp.contract;

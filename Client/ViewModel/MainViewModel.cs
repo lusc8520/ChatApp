@@ -1,22 +1,27 @@
 using System;
 using System.ServiceModel;
+using System.Windows.Media;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using de.hsfl.vs.hul.chatApp.contract;
 
 namespace de.hsfl.vs.hul.chatApp.client.ViewModel;
 
-public partial class MainViewModel : ViewModelBase
+public partial class MainViewModel : ObservableObject
 {
-      private readonly LoginViewModel _loginViewModel = new();
-      private readonly RegisterViewModel _registerViewModel = new();
+      public LoginViewModel LoginViewModel { get; }
+      public RegisterViewModel RegisterViewModel { get; }
+      public ChatViewModel ChatViewModel { get; }
+      public ChatClient ChatClient { get; }
+      
+      private ObservableObject _currentView;
 
-       private ViewModelBase _currentView;
-
-       public ViewModelBase CurrentView
+       public ObservableObject CurrentView
        {
              get => _currentView;
              set
              {
+                   if (value == _currentView) return;
                    _currentView = value;
                    OnPropertyChanged();
              }
@@ -24,24 +29,37 @@ public partial class MainViewModel : ViewModelBase
 
       public MainViewModel()
       {
-            CurrentView = _loginViewModel; // set default navigation
-            DuplexChannelFactory<IChatService> factory = new DuplexChannelFactory<IChatService>(
-                  new InstanceContext(new ChatClient()),
-                  new NetTcpBinding(),
-                  "net.tcp://localhost:9000/chatApp");
-            IChatService service = factory.CreateChannel();
-            service.Connect();
+            LoginViewModel = new LoginViewModel(this);
+            RegisterViewModel = new RegisterViewModel(this);
+            ChatViewModel = new ChatViewModel(this);
+            ChatClient = new ChatClient();
+            CurrentView = LoginViewModel; // set default navigation
+            
+            // connection to server
+            // TODO irgendwo hin auslagern ?
+            // DuplexChannelFactory<IChatService> factory = new DuplexChannelFactory<IChatService>(
+            //       new InstanceContext(new ChatClient()),
+            //       new NetTcpBinding(),
+            //       "net.tcp://localhost:9000/chatApp");
+            // IChatService service = factory.CreateChannel();
+            // service.Connect();
       }
 
       [RelayCommand]
       private void NavigateToLogin()
       {
-            CurrentView = _loginViewModel;
+            CurrentView = LoginViewModel;
       }
       
       [RelayCommand]
       private void NavigateToRegister()
       {
-            CurrentView = _registerViewModel;
+            CurrentView = RegisterViewModel;
+      }
+
+      [RelayCommand]
+      private void NavigateToChat()
+      {
+            CurrentView = ChatViewModel;
       }
 }
