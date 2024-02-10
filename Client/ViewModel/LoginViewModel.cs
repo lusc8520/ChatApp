@@ -10,26 +10,10 @@ public partial class LoginViewModel(MainViewModel mvm) : ObservableObject
 {
     public MainViewModel MainViewModel { get; } = mvm;
     public string Username { get; set; }
-    public string ServerMessage { get; set; }
-
+    
     [RelayCommand]
-    private async Task Login(PasswordBox password)
+    private void Login(PasswordBox passwordBox)
     {
-        // run asynch methods to prevent ui blocking
-        var res = await Task.Run(() => MainViewModel.ChatClient.Login(Username, password.Password));
-        ShowMessage(res.Text);
+        Task.Run(() => MainViewModel.ChatClient.Login(Username, passwordBox.Password));
     }
-
-    private async void ShowMessage(string s)
-    {
-        await Task.Run(async () =>
-        {
-            ServerMessage = s;
-            OnPropertyChanged("ServerMessage");
-            await Task.Delay(2000);
-            ServerMessage = "";
-            OnPropertyChanged("ServerMessage");
-        });
-    }
-
 }

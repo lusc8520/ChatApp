@@ -14,6 +14,7 @@ namespace de.hsfl.vs.hul.chatApp.client.View
         public MainWindow()
         {
             InitializeComponent();
+            MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight;
         }
         
         private void TopBarClick(object sender, MouseButtonEventArgs e)

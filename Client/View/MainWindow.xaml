@@ -14,7 +14,7 @@
         MinHeight="500"
         MinWidth="800"
         WindowStartupLocation="Manual"
-        BorderThickness="5">
+        BorderThickness="6, 6, 6, 7">
     <Window.DataContext>
         <Binding Source="{StaticResource MainViewModel}">
         </Binding>
@@ -66,7 +66,7 @@
         </Border>
         <Border Grid.Row="1"
                 BorderBrush="Black"
-                BorderThickness="0.5">
+                BorderThickness="0.5, 0, 0.5, 0.5">
             <ContentControl
                 Content="{Binding CurrentView}">
             </ContentControl>

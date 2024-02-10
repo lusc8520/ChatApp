@@ -3,33 +3,81 @@ using System.ServiceModel;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
 
-namespace de.hsfl.vs.hul.chatApp.client
+namespace de.hsfl.vs.hul.chatApp.client;
+
+public class ChatClient : IChatClient
 {
-    public class ChatClient : IChatClient
+    public event Action<LoginResponse> LoginSuccess;
+    public event Action<LoginResponse> LoginFailed;
+    public event Action LogoutSucces;
+    
+    private IChatService _chatService;
+    public ChatClient()
     {
-        private readonly IChatService _chatService;
-        public ChatClient()
+        var factory = new DuplexChannelFactory<IChatService>(
+            new InstanceContext(this),
+            new NetTcpBinding(),
+            "net.tcp://localhost:9000/chatApp");
+        _chatService = factory.CreateChannel();
+        
+        // erste verbindung zum server aufbauen
+        // ohne dies hat die erste login/register anfrage ein wenig länger gedauert
+        _chatService.Connect();
+    }
+    public void Connect()
+    {
+        Console.WriteLine("connected to server!");
+    }
+
+    public void Login(string username, string password)
+    {
+        Execute(() =>
         {
+            HandleLoginResponse(_chatService.Login(username, password));
+        });
+    }
+
+    public void Register(string username, string password)
+    {
+        Execute(() =>
+        {
+            HandleLoginResponse(_chatService.Register(username, password));
+        });
+    }
+
+    private void HandleLoginResponse(LoginResponse response)
+    {
+        if (response.User != null)
+        {
+            LoginSuccess?.Invoke(response);
+            return;
+        }
+        LoginFailed?.Invoke(response);
+    }
+
+    private void Execute(Action action)
+    {
+        // try to execute method
+        try
+        {
+            action();
+        }
+        catch
+        {
+            // try again with new server connection
             var factory = new DuplexChannelFactory<IChatService>(
                 new InstanceContext(this),
                 new NetTcpBinding(),
                 "net.tcp://localhost:9000/chatApp");
             _chatService = factory.CreateChannel();
-            _chatService.Connect();
+            action();
+            // TODO: show (server?) error if it fails again ?
         }
-        public void Receive(string s)
-        {
-            Console.WriteLine($"Received Message: {s}");
-        }
+    }
 
-        public LoginResponse Login(string username, string password)
-        {
-            return _chatService.Login(username, password);
-        }
-
-        public LoginResponse Register(string username, string password)
-        {
-            return _chatService.Register(username, password);
-        }
+    public void Logout()
+    {
+        // TODO send logout message to server ?
+        LogoutSucces?.Invoke();
     }
 }

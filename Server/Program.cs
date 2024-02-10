@@ -23,8 +23,8 @@ internal static class Program
         const string sql = """
                             create table if not exists user (
                                 id integer primary key autoincrement,
-                                username text,
-                                password text
+                                username varchar(20),
+                                password varchar(20)
                             )
                             """;
         
@@ -39,7 +39,7 @@ internal static class Program
         db.Close();
         
         serviceHost.Open();
-        Console.WriteLine("service started");
+        Console.WriteLine("service started!");
         Console.ReadLine();
     }
 }

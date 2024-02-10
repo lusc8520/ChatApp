@@ -3,10 +3,55 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:de.hsfl.vs.hul.chatApp.client.View"
              mc:Ignorable="d"
-             d:DesignHeight="500" d:DesignWidth="800">
-    <Grid Background="Black">
-        <Label Content="I am Chat" Foreground="White" FontSize="30"></Label>
+             d:DesignHeight="500" d:DesignWidth="800"
+             DataContext="{Binding Source={StaticResource MainViewModel},
+              Path=ChatViewModel}">
+    <Grid Background="#313338">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="200"/>
+        </Grid.ColumnDefinitions>
+        <Grid Background="#2b2d31">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition Height="50"/>
+            </Grid.RowDefinitions>
+            <Label Content="Chats"
+                   Foreground="White"
+                   FontSize="30"/>
+            
+            <Grid Grid.Row="1" Background="#1e1f22">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50"></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        FontSize="25"
+                        Margin="5"
+                        ToolTip="Logout"
+                        Content="🡄"
+                        Command="{Binding LogoutCommand}"
+                        Style="{StaticResource LogoutButtonStyle}"/>
+                <TextBlock Text="{Binding MainViewModel.User.Username}"
+                           Grid.Column="1"
+                           VerticalAlignment="Center"
+                           Margin="5, 0, 0, 0"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="White"
+                           FontSize="20"/>
+            </Grid>
+        </Grid>
+        
+        <Label Content="The Chat"
+               Grid.Column="1"
+               Foreground="White"
+               FontSize="30"/>
+        <Label Content="Members"
+               Grid.Column="2"
+               Foreground="White"
+               Background="#2b2d31"
+               FontSize="30"/>
     </Grid>
 </UserControl>

@@ -17,18 +17,18 @@ namespace de.hsfl.vs.hul.chatApp.server;
 
 [ServiceBehavior(
     InstanceContextMode = InstanceContextMode.PerSession,
-    UseSynchronizationContext = false ,
+    UseSynchronizationContext = false,
     IncludeExceptionDetailInFaults = true)]
 public class ChatService : IChatService
 {
     private static readonly string DbPath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.FullName + "/data.db";
-    private static readonly ConcurrentDictionary<int, IChatClient> Clients = new(); // TODO for global chat ?
+    private static readonly ConcurrentDictionary<int, IChatClient> Clients = new(); // for global chat ?
     
     public void Connect()
     {
-        Console.WriteLine("Client Connected!");
+        Console.WriteLine("client connected!");
         var client = OperationContext.Current.GetCallbackChannel<IChatClient>();
-        client.Receive("Server Callback!");
+        client.Connect();
     }
 
     private async void ConnectToGlobalChat(int id, IChatClient client)
@@ -36,7 +36,7 @@ public class ChatService : IChatService
         await Task.Run(() =>
         {
             Clients[id] = client;
-            Console.WriteLine(Clients.Count);
+            // TODO send broadcast for global chat ?
         });
     }
 
@@ -49,7 +49,6 @@ public class ChatService : IChatService
         if (user != null && user.Password == password)
         {
             // login success
-            Console.WriteLine("login success");
             ConnectToGlobalChat(user.Id, OperationContext.Current.GetCallbackChannel<IChatClient>());
             return new LoginResponse { User = user.ToDto()};
         }

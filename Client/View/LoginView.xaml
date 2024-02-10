@@ -32,7 +32,13 @@
                          BorderBrush="Black"
                          Padding="1"
                          MaxLength="20"
-                         Text="{Binding Username}"/>
+                         Text="{Binding Username}">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter"
+                                    Command="{Binding LoginCommand}"
+                                    CommandParameter="{Binding ElementName=PasswordBox}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
                 <Label Content="Password"
                        Foreground="Gray"
                        FontSize="20"/>
@@ -43,7 +49,13 @@
                              BorderBrush="Black"
                              Padding="1"
                              MaxLength="20"
-                             Name="PasswordBox"/>
+                             Name="PasswordBox">
+                    <PasswordBox.InputBindings>
+                        <KeyBinding Key="Enter"
+                                    Command="{Binding LoginCommand}"
+                                    CommandParameter="{Binding ElementName=PasswordBox}"/>
+                    </PasswordBox.InputBindings>
+                </PasswordBox>
                 <Button Content="Login"
                         Margin="0, 25, 0, 15"
                         BorderBrush="Black"
@@ -66,7 +78,7 @@
                     </Button>
                 </StackPanel>
                 <TextBlock
-                    Text="{Binding ServerMessage}"
+                    Text="{Binding MainViewModel.ServerMessage}"
                     Foreground="LightCoral"
                     FontSize="20"
                     TextWrapping="Wrap"/>
