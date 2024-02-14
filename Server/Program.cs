@@ -17,6 +17,7 @@ internal static class Program
     public static void Main()
     {
         var dbPath = Directory.GetParent(Environment.CurrentDirectory).Parent.FullName + "/data.db";
+        // configure service
         using var serviceHost = new ServiceHost(typeof(ChatService), new Uri("net.tcp://localhost:9000/chatApp"));
         serviceHost.AddServiceEndpoint(typeof(IChatService), new NetTcpBinding(), "");
         

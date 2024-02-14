@@ -1,5 +1,6 @@
 using System;
 using System.ServiceModel;
+using System.Threading.Tasks;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
 
@@ -9,7 +10,7 @@ public class ChatClient : IChatClient
 {
     public event Action<LoginResponse> LoginSuccess;
     public event Action<LoginResponse> LoginFailed;
-    public event Action LogoutSucces;
+    public event Action LogoutSuccess;
     
     private IChatService _chatService;
     public ChatClient()
@@ -22,7 +23,7 @@ public class ChatClient : IChatClient
         
         // erste verbindung zum server aufbauen
         // ohne dies hat die erste login/register anfrage ein wenig länger gedauert
-        _chatService.Connect();
+        Task.Run(() => Execute(() => _chatService.Connect()));
     }
     public void Connect()
     {
@@ -60,24 +61,38 @@ public class ChatClient : IChatClient
         // try to execute method
         try
         {
-            action();
+            action.Invoke();
         }
         catch
         {
+            LoginFailed?.Invoke( new LoginResponse
+            {
+                Text = "trying to connect to server..."
+            });
             // try again with new server connection
             var factory = new DuplexChannelFactory<IChatService>(
                 new InstanceContext(this),
                 new NetTcpBinding(),
                 "net.tcp://localhost:9000/chatApp");
             _chatService = factory.CreateChannel();
-            action();
-            // TODO: show (server?) error if it fails again ?
+            try
+            {
+                action.Invoke();
+            }
+            catch (Exception)
+            {
+                // if it still does not work, show error message
+                LoginFailed?.Invoke(new LoginResponse
+                {
+                    Text = "the server is not running"
+                });
+            }
         }
     }
 
     public void Logout()
     {
         // TODO send logout message to server ?
-        LogoutSucces?.Invoke();
+        LogoutSuccess?.Invoke();
     }
 }

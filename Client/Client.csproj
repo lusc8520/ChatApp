@@ -64,6 +64,9 @@
         </Compile>
         <Compile Include="ChatClient.cs" />
         <Compile Include="ViewModel\ChatViewModel.cs" />
+        <Compile Include="ViewModel\Chat\GroupChatViewModel.cs" />
+        <Compile Include="ViewModel\Chat\IChatRoom.cs" />
+        <Compile Include="ViewModel\Chat\PrivateChatViewModel.cs" />
         <Compile Include="ViewModel\LoginViewModel.cs" />
         <Compile Include="ViewModel\MainViewModel.cs" />
         <Compile Include="ViewModel\RegisterViewModel.cs" />
@@ -96,9 +99,6 @@
         </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
-      <Folder Include="Model\" />
-    </ItemGroup>
-    <ItemGroup>
       <Page Include="View\ChatView.xaml" />
       <Page Include="View\LoginView.xaml" />
       <Page Include="View\MainWindow.xaml">
@@ -125,6 +125,9 @@
     </ItemGroup>
     <ItemGroup>
       <None Include="App.config" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Model\" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
         <!-- Work around https://github.com/dotnet/wpf/issues/6792 -->

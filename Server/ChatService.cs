@@ -2,10 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Data.SQLite;
 using System.IO;
-using System.Linq;
-using System.Net.WebSockets;
 using System.ServiceModel;
-using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using Dapper.Contrib.Extensions;
@@ -22,20 +19,21 @@ namespace de.hsfl.vs.hul.chatApp.server;
 public class ChatService : IChatService
 {
     private static readonly string DbPath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.FullName + "/data.db";
-    private static readonly ConcurrentDictionary<int, IChatClient> Clients = new(); // for global chat ?
+    private static readonly ConcurrentDictionary<User, IChatClient> Clients = new(); // for global chat ?
     
     public void Connect()
     {
         Console.WriteLine("client connected!");
         var client = OperationContext.Current.GetCallbackChannel<IChatClient>();
-        client.Connect();
+        client?.Connect();
     }
 
-    private async void ConnectToGlobalChat(int id, IChatClient client)
+    private async Task ConnectToGlobalChat(User user, IChatClient? client)
     {
         await Task.Run(() =>
         {
-            Clients[id] = client;
+            if (client == null) return;
+            Clients[user] = client;
             // TODO send broadcast for global chat ?
         });
     }
@@ -49,7 +47,7 @@ public class ChatService : IChatService
         if (user != null && user.Password == password)
         {
             // login success
-            ConnectToGlobalChat(user.Id, OperationContext.Current.GetCallbackChannel<IChatClient>());
+            ConnectToGlobalChat(user, OperationContext.Current.GetCallbackChannel<IChatClient>());
             return new LoginResponse { User = user.ToDto()};
         }
         // login failed
@@ -67,7 +65,9 @@ public class ChatService : IChatService
         }
         var db = new SQLiteConnection($"Data Source={DbPath}");
         db.Open();
-        var existUser = db.QueryFirstOrDefault<User?>($"select * from user where username = @Username", new {Username = username});
+        var existUser = db.QuerySingleOrDefault<User?>(
+            $"select * from user where username = @Username", new {Username = username}
+        );
         db.Close();
         if (existUser != null)
         {
@@ -83,9 +83,9 @@ public class ChatService : IChatService
             Password = password
         };
         db.Open();
-        var userId = db.Insert(user);
+        db.Insert(user);
         db.Close();
-        ConnectToGlobalChat((int)userId, OperationContext.Current.GetCallbackChannel<IChatClient>());
+        ConnectToGlobalChat(user, OperationContext.Current.GetCallbackChannel<IChatClient>()?? null);
         return new LoginResponse {User = user.ToDto()};
     }
 

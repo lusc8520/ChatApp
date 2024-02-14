@@ -1,10 +1,8 @@
 using System;
 using System.ServiceModel;
 using System.Threading.Tasks;
-using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
 
 namespace de.hsfl.vs.hul.chatApp.client.ViewModel;
@@ -15,9 +13,9 @@ public partial class MainViewModel : ObservableObject
       public RegisterViewModel RegisterViewModel { get; }
       public ChatViewModel ChatViewModel { get; }
       public ChatClient ChatClient { get; }
-      
+
       private ObservableObject _currentView;
-       public ObservableObject CurrentView
+      public ObservableObject CurrentView
        {
              get => _currentView;
              set
@@ -28,8 +26,8 @@ public partial class MainViewModel : ObservableObject
              }
        }
 
-       private string _serverMessage;
-       public string ServerMessage
+      private string _serverMessage;
+      public string ServerMessage
        {
              get => _serverMessage;
              set
@@ -39,9 +37,9 @@ public partial class MainViewModel : ObservableObject
              }
        }
 
-       private User _user;
+      private User _user;
 
-       public User User
+      public User User
        {
              get => _user;
              set
@@ -62,9 +60,10 @@ public partial class MainViewModel : ObservableObject
             };
             ChatClient.LoginFailed += response =>
             {
+                  if (CurrentView == ChatViewModel) NavigateToLogin();
                   ShowMessage(response.Text);
             };
-            ChatClient.LogoutSucces += () =>
+            ChatClient.LogoutSuccess += () =>
             {
                   User = null;
                   NavigateToLogin();
@@ -95,7 +94,7 @@ public partial class MainViewModel : ObservableObject
             CurrentView = ChatViewModel;
       }
 
-      private async void ShowMessage(string s)
+      private async Task ShowMessage(string s)
       {
             // show message for 2 seconds then hide it
             ServerMessage = s;
