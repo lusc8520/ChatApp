@@ -14,6 +14,6 @@ public partial class LoginViewModel(MainViewModel mvm) : ObservableObject
     [RelayCommand]
     private void Login(PasswordBox passwordBox)
     {
-        Task.Run(() => MainViewModel.ChatClient.Login(Username, passwordBox.Password));
+        MainViewModel.ChatClient.Login(Username, passwordBox.Password);
     }
 }

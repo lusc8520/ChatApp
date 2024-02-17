@@ -18,6 +18,15 @@ public interface IChatService
 
     [OperationContract]
     LoginResponse Register(string username, string password);
+
+    [OperationContract]
+    List<ChatRoom> FetchChatRooms();
+    
+    [OperationContract]
+    List<User> FetchUsers();
+
+    [OperationContract(IsOneWay = true)]
+    void SendMessage(Message message);
 }
 
 static class Helper
@@ -27,7 +36,9 @@ static class Helper
         return new List<Type>
         {
             typeof(LoginResponse),
-            typeof(User)
+            typeof(User),
+            typeof(ChatRoom),
+            typeof(Message)
         };
     }
 }

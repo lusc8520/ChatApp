@@ -1,17 +1,13 @@
-using System;
-using System.Runtime.Serialization;
-using System.ServiceModel;
-
 namespace de.hsfl.vs.hul.chatApp.contract.DTO;
 
-public class User
+public class ChatRoom
 {
     public int Id { get; set; }
-    public string Username { get; set; }
-
+    public string Name { get; set; }
+    
     public override bool Equals(object obj)
     {
-        return obj is User user && Id == user.Id;
+        return obj is ChatRoom chatroom && Id == chatroom.Id;
     }
 
     public override int GetHashCode()

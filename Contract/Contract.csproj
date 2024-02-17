@@ -42,7 +42,9 @@
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="DTO\ChatRoom.cs" />
         <Compile Include="DTO\LoginResponse.cs" />
+        <Compile Include="DTO\Message.cs" />
         <Compile Include="DTO\User.cs" />
         <Compile Include="IChatClient.cs" />
         <Compile Include="IChatService.cs" />

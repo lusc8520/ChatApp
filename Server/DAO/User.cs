@@ -4,7 +4,6 @@ using DTO = de.hsfl.vs.hul.chatApp.contract.DTO;
 
 namespace de.hsfl.vs.hul.chatApp.server.DAO;
 
-[Table("user")]
 public class User
 {
     public int Id { get; set; }

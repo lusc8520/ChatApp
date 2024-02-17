@@ -1,25 +1,28 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using Dapper;
 using Dapper.Contrib.Extensions;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
+using ChatRoom = de.hsfl.vs.hul.chatApp.contract.DTO.ChatRoom;
 using User = de.hsfl.vs.hul.chatApp.server.DAO.User;
+using UserDTO = de.hsfl.vs.hul.chatApp.contract.DTO.User;
 
 namespace de.hsfl.vs.hul.chatApp.server;
 
 [ServiceBehavior(
     InstanceContextMode = InstanceContextMode.PerSession,
-    UseSynchronizationContext = false,
     IncludeExceptionDetailInFaults = true)]
 public class ChatService : IChatService
 {
     private static readonly string DbPath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.FullName + "/data.db";
-    private static readonly ConcurrentDictionary<User, IChatClient> Clients = new(); // for global chat ?
+    private static readonly ConcurrentDictionary<int, IChatClient> Clients = new(); // for global chat ?
     
     public void Connect()
     {
@@ -28,12 +31,11 @@ public class ChatService : IChatService
         client?.Connect();
     }
 
-    private async Task ConnectToGlobalChat(User user, IChatClient? client)
+    private async Task ConnectToGlobalChat(int userId, IChatClient client)
     {
         await Task.Run(() =>
         {
-            if (client == null) return;
-            Clients[user] = client;
+            Clients[userId] = client;
             // TODO send broadcast for global chat ?
         });
     }
@@ -42,12 +44,16 @@ public class ChatService : IChatService
     {
         var db = new SQLiteConnection($"Data Source={DbPath}");
         db.Open();
-        var user = db.QueryFirstOrDefault<User?>($"select * from user where username = @Username", new {Username = username});
+        // get user with the given username from the db
+        var user = db.QuerySingleOrDefault<User?>(
+            $"select * from Users where username = @Username", 
+            new {Username = username}
+        );
         db.Close();
         if (user != null && user.Password == password)
         {
             // login success
-            ConnectToGlobalChat(user, OperationContext.Current.GetCallbackChannel<IChatClient>());
+            ConnectToGlobalChat(user.Id, OperationContext.Current.GetCallbackChannel<IChatClient>());
             return new LoginResponse { User = user.ToDto()};
         }
         // login failed
@@ -65,8 +71,9 @@ public class ChatService : IChatService
         }
         var db = new SQLiteConnection($"Data Source={DbPath}");
         db.Open();
+        // check if the username already exists
         var existUser = db.QuerySingleOrDefault<User?>(
-            $"select * from user where username = @Username", new {Username = username}
+            $"select * from Users where username = @Username", new {Username = username}
         );
         db.Close();
         if (existUser != null)
@@ -75,7 +82,7 @@ public class ChatService : IChatService
             return new LoginResponse { Text = "username is not available" };
         }
         
-        // do register
+        // username does not exist -> do register
         // TODO encrypt password ?
         var user = new User
         {
@@ -83,14 +90,54 @@ public class ChatService : IChatService
             Password = password
         };
         db.Open();
-        db.Insert(user);
+        int userId = (int)db.Insert(user);
         db.Close();
-        ConnectToGlobalChat(user, OperationContext.Current.GetCallbackChannel<IChatClient>()?? null);
+        ConnectToGlobalChat(userId, OperationContext.Current.GetCallbackChannel<IChatClient>());
         return new LoginResponse {User = user.ToDto()};
+    }
+
+    public List<ChatRoom> FetchChatRooms()
+    {
+        var db = new SQLiteConnection($"Data Source={DbPath}");
+        db.Open();
+        // get all chat rooms and map them to DTOs
+        var rooms = db.Query<ChatRoom>(
+            @"select * from Chatrooms").AsList();
+        db.Close();
+        return rooms;
+    }
+
+    public List<UserDTO> FetchUsers()
+    {
+        var db = new SQLiteConnection($"Data Source={DbPath}");
+        db.Open();
+        // get all users by and map them to DTOs
+        var users = db.Query<User>(
+            @"select * from Users"
+        ).Select(user => user.ToDto()).AsList();
+        return users;
+    }
+
+    public void SendMessage(Message message)
+    {
+        message.DateTime = DateTime.Now;
+        foreach (var client in Clients)
+        {
+            try
+            {
+                client.Value.ReceiveMessage(message);
+            }
+            catch (Exception e)
+            {
+                Clients.TryRemove(client.Key, out _);
+                Console.WriteLine(e);
+            }
+        }
     }
 
     private bool ValidateInput(string? username, string? password)
     {
+        // TODO make input validation safer?
         if (username == null || password == null) return false;
         return !(username.Length < 3 || password.Length < 3);
     }

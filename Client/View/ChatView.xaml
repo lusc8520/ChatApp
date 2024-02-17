@@ -21,7 +21,8 @@
             </Grid.RowDefinitions>
             <ListView Background="#2b2d31"
                       ItemsSource="{Binding Chats}"
-                      BorderThickness="0">
+                      BorderThickness="0"
+                      SelectedItem="{Binding SelectedChat}">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem"
                            BasedOn="{StaticResource ChatItem}">
@@ -32,7 +33,7 @@
                                             Height="50"
                                             CornerRadius="4"
                                             Margin="8, 2, 8, 2">
-                                        <TextBlock Text="{Binding ChatName}"
+                                        <TextBlock Text="{Binding Name}"
                                                    Foreground="White"
                                                    FontSize="25"
                                                    VerticalAlignment="Center"
@@ -71,8 +72,30 @@
                 <RowDefinition/>
                 <RowDefinition Height="70"/>
             </Grid.RowDefinitions>
-            <StackPanel></StackPanel>
+            <ListView 
+                Background="Transparent"
+                BorderThickness="0"
+                ItemsSource="{Binding SelectedChat.Messages}">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label Content="{Binding Sender.Username}"/>
+                                            <Label Content="{Binding DateTime}"/>
+                                        </StackPanel>
+                                        <Label Content="{Binding Text}"></Label>
+                                    </StackPanel>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
             <TextBox Grid.Row="1"
+                     Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
                      Margin="10, 5, 10, 0"
                      FontSize="20"
                      Background="#383a40"
@@ -89,16 +112,49 @@
                         <Setter Property="CornerRadius" Value="10"></Setter>
                     </Style>
                 </TextBox.Resources>
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter"
+                                Command="{Binding SendMessageCommand}"
+                    />
+                </TextBox.InputBindings>
             </TextBox>
         </Grid>
-        <!-- <Label Content="The Chat" -->
-        <!--        Grid.Column="1" -->
-        <!--        Foreground="White" -->
-        <!--        FontSize="30"/> -->
-        <Label Content="Members"
-               Grid.Column="2"
-               Foreground="White"
-               Background="#2b2d31"
-               FontSize="30"/>
+        <Grid Grid.Column="2" Background="#2b2d31">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50"></RowDefinition>
+                <RowDefinition></RowDefinition>
+            </Grid.RowDefinitions>
+            <Label Content="- User List -"
+                   Grid.Row="0"
+                   HorizontalAlignment="Center"
+                   Foreground="DarkGray"
+                   FontSize="25"/>
+            <ListView Grid.Row="1"
+                      Background="#2b2d31"
+                      BorderThickness="0"
+                      ItemsSource="{Binding UserList}">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem"
+                           BasedOn="{StaticResource ChatItem}">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListViewItem">
+                                    <Border Background="{TemplateBinding Background}"
+                                            Height="50"
+                                            CornerRadius="4"
+                                            Margin="8, 2, 8, 2">
+                                        <TextBlock Text="{Binding Username}"
+                                                   Foreground="DarkGray"
+                                                   FontSize="25"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
+        </Grid>
     </Grid>
 </UserControl>

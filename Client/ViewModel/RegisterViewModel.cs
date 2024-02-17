@@ -14,6 +14,6 @@ public partial class RegisterViewModel(MainViewModel mvm) : ObservableObject
     [RelayCommand]
     private void Register(PasswordBox passwordBox)
     {
-        Task.Run(() => MainViewModel.ChatClient.Register(Username, passwordBox.Password));
+        MainViewModel.ChatClient.Register(Username, passwordBox.Password);
     }
 }

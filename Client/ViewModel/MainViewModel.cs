@@ -69,6 +69,7 @@ public partial class MainViewModel : ObservableObject
                   NavigateToLogin();
             };
             // initialize other view models
+            // mainviewmodel acts as "singleton" to the other viewmodels
             LoginViewModel = new LoginViewModel(this);
             RegisterViewModel = new RegisterViewModel(this);
             ChatViewModel = new ChatViewModel(this);

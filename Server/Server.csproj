@@ -72,6 +72,7 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="ChatService.cs" />
+        <Compile Include="DAO\Message.cs" />
         <Compile Include="DAO\User.cs" />
         <Compile Include="Program.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />

@@ -64,9 +64,7 @@
         </Compile>
         <Compile Include="ChatClient.cs" />
         <Compile Include="ViewModel\ChatViewModel.cs" />
-        <Compile Include="ViewModel\Chat\GroupChatViewModel.cs" />
-        <Compile Include="ViewModel\Chat\IChatRoom.cs" />
-        <Compile Include="ViewModel\Chat\PrivateChatViewModel.cs" />
+        <Compile Include="ViewModel\Chat\ChatRoomViewModel.cs" />
         <Compile Include="ViewModel\LoginViewModel.cs" />
         <Compile Include="ViewModel\MainViewModel.cs" />
         <Compile Include="ViewModel\RegisterViewModel.cs" />
