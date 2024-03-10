@@ -37,9 +37,9 @@ public partial class MainViewModel : ObservableObject
              }
        }
 
-      private User _user;
+      private UserDto _user;
 
-      public User User
+      public UserDto User
        {
              get => _user;
              set
@@ -55,7 +55,7 @@ public partial class MainViewModel : ObservableObject
             // set up client events
             ChatClient.LoginSuccess += response =>
             {
-                  User = response.User;
+                  User = response.UserDto;
                   NavigateToChat();
             };
             ChatClient.LoginFailed += response =>
@@ -68,13 +68,15 @@ public partial class MainViewModel : ObservableObject
                   User = null;
                   NavigateToLogin();
             };
-            // initialize other view models
-            // mainviewmodel acts as "singleton" to the other viewmodels
+            // inject dependencies into the other view models
             LoginViewModel = new LoginViewModel(this);
             RegisterViewModel = new RegisterViewModel(this);
             ChatViewModel = new ChatViewModel(this);
             // set default navigation
             CurrentView = LoginViewModel;
+            
+            // login instantly for testing
+            // ChatClient.Login("user", "user");
       }
 
       [RelayCommand]

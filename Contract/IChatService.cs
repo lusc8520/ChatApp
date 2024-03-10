@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Reflection;
 using System.ServiceModel;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
@@ -12,7 +13,6 @@ public interface IChatService
 {
     [OperationContract(IsOneWay = true)]
     void Connect();
-
     [OperationContract]
     LoginResponse Login(string username, string password);
 
@@ -20,13 +20,28 @@ public interface IChatService
     LoginResponse Register(string username, string password);
 
     [OperationContract]
-    List<ChatRoom> FetchChatRooms();
+    IEnumerable<ChatRoom> FetchChatRooms();
     
     [OperationContract]
-    List<User> FetchUsers();
+    IEnumerable<UserDto> FetchUsers();
 
     [OperationContract(IsOneWay = true)]
-    void SendMessage(Message message);
+    void BroadcastMessage(MessageDto messageDto);
+
+    [OperationContract(IsOneWay = true)]
+    void SendPrivateMessage(MessageDto messageDto);
+
+    [OperationContract]
+    IEnumerable<MessageDto> FetchMessages(int chatRoomId);
+
+    [OperationContract]
+    IEnumerable<MessageDto> FetchPrivateMessages(int user1, int user2);
+
+    [OperationContract(IsOneWay = true)]
+    void UploadPdf(byte[] bytes);
+    
+    [OperationContract]
+    byte[] FetchPlugins();
 }
 
 static class Helper
@@ -36,9 +51,10 @@ static class Helper
         return new List<Type>
         {
             typeof(LoginResponse),
-            typeof(User),
+            typeof(UserDto),
             typeof(ChatRoom),
-            typeof(Message)
+            typeof(MessageDto),
+            typeof(IPlugin)
         };
     }
 }

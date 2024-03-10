@@ -6,7 +6,7 @@
         xmlns:view="clr-namespace:de.hsfl.vs.hul.chatApp.client.View"
         xmlns:app="clr-namespace:de.hsfl.vs.hul.chatApp.client"
         mc:Ignorable="d"
-        Height="500" Width="800"
+        Height="700" Width="1000"
         Background="#313338"
         WindowStyle="None"
         AllowsTransparency="True"

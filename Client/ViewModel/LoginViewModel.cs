@@ -9,11 +9,12 @@ namespace de.hsfl.vs.hul.chatApp.client.ViewModel;
 public partial class LoginViewModel(MainViewModel mvm) : ObservableObject
 {
     public MainViewModel MainViewModel { get; } = mvm;
+    private ChatClient ChatClient { get; } = mvm.ChatClient;
     public string Username { get; set; }
     
     [RelayCommand]
     private void Login(PasswordBox passwordBox)
     {
-        MainViewModel.ChatClient.Login(Username, passwordBox.Password);
+        ChatClient.Login(Username, passwordBox.Password);
     }
 }

@@ -20,12 +20,11 @@
             <view:ChatView></view:ChatView>
         </DataTemplate>
         
-        <!-- Button Style -->
-        <Style TargetType="Button" x:Key="CustomButtonStyle">
-            <Setter Property="Background" Value="#4042b1"/>
-            <Setter Property="Foreground" Value="White"/>
+        <!-- button style base -->
+        <Style TargetType="Button" x:Key="ButtonStyleBase">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="ClickMode" Value="Press"/>
+            <Setter Property="Foreground" Value="White"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -36,6 +35,11 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+        
+        <!-- login and register button style -->
+        <Style TargetType="Button" x:Key="CustomButtonStyle" BasedOn="{StaticResource ButtonStyleBase}">
+            <Setter Property="Background" Value="#4042b1"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#373999"/>
@@ -43,10 +47,20 @@
             </Style.Triggers>
         </Style>
         
-        <!-- Logout Button Style -->
+        <!-- upload button style -->
+        <Style TargetType="Button" x:Key="UploadButtonStyle" BasedOn="{StaticResource ButtonStyleBase}">
+            <Setter Property="Border.CornerRadius" Value="10, 0, 0, 10"/>
+            <Setter Property="Background" Value="#383a40"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1e1f22"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- logout button style -->
         <Style TargetType="Button" x:Key="LogoutButtonStyle" BasedOn="{StaticResource CustomButtonStyle}">
             <Setter Property="Border.CornerRadius" Value="8"/>
-            <Setter Property="ToolTipService.InitialShowDelay" Value="0"></Setter>
             <Setter Property="Background" Value="#da373c"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
@@ -55,12 +69,12 @@
             </Style.Triggers>
         </Style>
         
-        <!-- TextBox Style -->
+        <!-- textbox Style -->
         <Style TargetType="Border" x:Key="TextBox">
             <Setter Property="CornerRadius" Value="5"></Setter>
         </Style>
         
-        <!-- Chat Item Style -->
+        <!-- chat item Style -->
         <Style TargetType="ListViewItem" x:Key="ChatItem">
             <Setter Property="Background" Value="Transparent"></Setter>
             <Style.Triggers>
@@ -74,7 +88,7 @@
             </Style.Triggers>
         </Style>
         
-        <!-- Scrollbar style https://pastebin.com/adtRjDtG -->
+        <!-- scrollbar style from https://pastebin.com/adtRjDtG -->
         <Style x:Key="ScrollThumbs" TargetType="{x:Type Thumb}">
             <Setter Property="Template">
                 <Setter.Value>

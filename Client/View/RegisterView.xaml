@@ -29,6 +29,7 @@
                          Background="#1e1f22"
                          Foreground="White"
                          BorderBrush="Black"
+                         MaxLength="20"
                          Padding="1"
                          Text="{Binding Username}">
                        <TextBox.InputBindings>
@@ -42,6 +43,7 @@
                        FontSize="20"/>
                 <PasswordBox Width="300"
                              FontSize="25"
+                             MaxLength="20"
                              Background="#1e1f22"
                              Foreground="White"
                              BorderBrush="Black"

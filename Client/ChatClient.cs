@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using System.Windows;
@@ -15,7 +19,11 @@ public class ChatClient : IChatClient
     public event Action<LoginResponse> LoginSuccess;
     public event Action<LoginResponse> LoginFailed;
     public event Action LogoutSuccess;
-    public event Action<Message> MessageReceived;
+    public event Action<MessageDto> BroadcastReceived;
+    public event Action<UserDto> UserReceived; 
+    public event Action<MessageDto> PrivateMessageReceived; 
+    public event Action GlobalChatsFetched;
+    public event Action<MessageDto> MessageReceiving;
     
     private IChatService _chatService;
     public ChatClient()
@@ -35,9 +43,22 @@ public class ChatClient : IChatClient
         Console.WriteLine("connected to server!");
     }
 
-    public void ReceiveMessage(Message message)
+    public void ReceiveBroadcast(MessageDto messageDto)
     {
-        MessageReceived?.Invoke(message);
+        MessageReceiving?.Invoke(messageDto);  
+        Console.WriteLine("Test: " + messageDto.Text);
+        BroadcastReceived?.Invoke(messageDto);
+    }
+
+    public void ReceivePrivateMessage(MessageDto messageDto)
+    {
+        MessageReceiving?.Invoke(messageDto);
+        PrivateMessageReceived?.Invoke(messageDto);
+    }
+
+    public void ReceiveNewUser(UserDto user)
+    {
+        UserReceived?.Invoke(user);
     }
 
     public void Login(string username, string password)
@@ -64,7 +85,7 @@ public class ChatClient : IChatClient
 
     private void HandleLoginResponse(LoginResponse response)
     {
-        if (response.User != null)
+        if (response.UserDto != null)
         {
             LoginSuccess?.Invoke(response);
             return;
@@ -110,67 +131,129 @@ public class ChatClient : IChatClient
 
     public void Logout()
     {
-        Task.Run(() =>
-        {
-            // TODO send logout message to server ?
-            LogoutSuccess?.Invoke();
-        });
+        // TODO send logout message to server ?
+        LogoutSuccess?.Invoke();
     }
 
-    public void FetchChatRooms(ObservableCollection<ChatRoomViewModel> currentChatList)
+    public void UploadPdf(byte[] bytes)
+    {
+        Console.WriteLine("huh");
+        _chatService.UploadPdf(bytes);
+    }
+
+    public void FetchChats(ObservableCollection<GlobalChat> chats)
     {
         Task.Run(() =>
         {
-            var rooms = _chatService.FetchChatRooms();
-            // check if fetched chatrooms already exist
-            // this only works because of overriding the Equals/Hashcode methods in ChatRoom
-            var newRooms = rooms.Except(
-                currentChatList.Select(c => new ChatRoom { Id = c.Id, Name = c.Name })
-            );
-            foreach (var chatRoom in newRooms)
+            var fetchedChats = _chatService.FetchChatRooms();
+            foreach (var chatRoom in fetchedChats)
             {
                 // invoke the following from the application dispatcher
                 // because this runs in a background thread while the currentChatList is on the main thread
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    currentChatList.Add(new ChatRoomViewModel()
+                    chats.Add(new GlobalChat()
                     {
                         Id = chatRoom.Id,
                         Name = chatRoom.Name
                     });
                 });
             }
+            GlobalChatsFetched?.Invoke();
         });
     }
 
-    public void FetchUsers(ObservableCollection<User> currentUserList)
+    public void FetchChats(ObservableCollection<PrivateChat> chats)
     {
         Task.Run(() =>
         {
-            var fetchedUsers = _chatService.FetchUsers();
-            var newUsers = fetchedUsers.Except(currentUserList);
-            foreach (var user in newUsers)
+            var fetchedChats = _chatService.FetchUsers();
+            foreach (var user in fetchedChats)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    currentUserList.Add(user);
+                    chats.Add(new PrivateChat
+                    {
+                        Name = user.Username,
+                        Id = user.Id
+                    });
                 });
             }
         });
     }
 
-    public void SendMessage(User sender, ChatRoomViewModel chatRoom, string text)
+    public void FetchPlugins(IPlugin plugins)
+    {
+        var assemblyBytes =_chatService.FetchPlugins();
+        Assembly pluginAssembly = Assembly.Load(assemblyBytes);
+        foreach (var type in pluginAssembly.GetTypes())
+        {
+            if (typeof(IPlugin).IsAssignableFrom(type))
+            {
+                var plugin = Activator.CreateInstance(type) as IPlugin;
+                if (plugin != null)
+                {
+                    plugins = plugin;
+                    //plugins.Add(plugin);
+                    Console.WriteLine($"Plugin: {plugins.GetType().Name}");
+                    plugin.Install(this);
+                }
+            }
+        }
+        //var translatorPlugin = plugins.First();
+    }
+
+    public void BroadcastMessage(UserDto sender, int chatRoomId, string text)
+    {
+        _chatService.BroadcastMessage(
+            new MessageDto
+            {
+                Sender = sender,
+                Text = text,
+                ChatId = chatRoomId
+            }
+        );
+    }
+
+    public void FetchMessages(GlobalChat chat)
     {
         Task.Run(() =>
         {
-            _chatService.SendMessage(
-                new Message
+            var fetchedMessages = _chatService.FetchMessages(chat.Id);
+            foreach (var fetchedMessage in fetchedMessages)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    Sender = sender,
-                    Text = text,
-                    ChatRoom = new ChatRoom { Id = chatRoom.Id }
-                }
-            );
+                    chat.Messages.Add(fetchedMessage);
+                });
+            }
         });
+    }
+
+    public void FetchMessages(PrivateChat chat, int userId)
+    {
+        Task.Run(() =>
+        {
+            var fetchedMessages = _chatService.FetchPrivateMessages(userId, chat.Id);
+            foreach (var fetchedMessage in fetchedMessages)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    chat.Messages.Add(fetchedMessage);
+                });
+            }
+        });
+    }
+
+    public void SendPrivateMessage(UserDto sender, int receiverId, string text)
+    {
+        _chatService.SendPrivateMessage(
+            new MessageDto
+            {
+                Sender = sender,
+                ChatId = receiverId,
+                Text = text
+            }
+        );
     }
 }
