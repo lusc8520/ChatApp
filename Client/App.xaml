@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:viewModels="clr-namespace:de.hsfl.vs.hul.chatApp.client.ViewModel"
              xmlns:view="clr-namespace:de.hsfl.vs.hul.chatApp.client.View"
+             xmlns:dto="clr-namespace:de.hsfl.vs.hul.chatApp.contract.DTO;assembly=Contract"
              StartupUri="/View/MainWindow.xaml">
     <Application.Resources>
         
@@ -56,6 +57,11 @@
                     <Setter Property="Background" Value="#1e1f22"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+        
+        <!-- download button style -->
+        <Style TargetType="Button" x:Key="DownloadButtonStyle" BasedOn="{StaticResource ButtonStyleBase}">
+            <Setter Property="Background" Value="Transparent"/>
         </Style>
         
         <!-- logout button style -->

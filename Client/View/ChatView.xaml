@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:viewModels="clr-namespace:de.hsfl.vs.hul.chatApp.client.ViewModel.Chat"
+             xmlns:dto="clr-namespace:de.hsfl.vs.hul.chatApp.contract.DTO;assembly=Contract"
+             xmlns:chat="clr-namespace:de.hsfl.vs.hul.chatApp.client.ViewModel.Chat"
              mc:Ignorable="d"
              d:DesignHeight="500" d:DesignWidth="800"
              DataContext="{Binding Source={StaticResource MainViewModel},
@@ -26,6 +27,7 @@
                    Foreground="DarkGray"
                    FontSize="25"/>
             <ListView Grid.Row="1" 
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       Background="#2b2d31"
                       ItemsSource="{Binding GlobalChats}"
                       BorderThickness="0"
@@ -40,11 +42,13 @@
                                             Height="50"
                                             CornerRadius="4"
                                             Margin="8, 2, 8, 2">
-                                        <TextBlock Text="{Binding Name}"
-                                                   Foreground="LightGray"
-                                                   FontSize="25"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Center"/>
+                                        <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                                            <TextBlock Text="{Binding Name}"
+                                                       Foreground="LightGray"
+                                                       FontSize="25"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"/>
+                                        </Viewbox>
                                     </Border>
                                 </ControlTemplate>
                             </Setter.Value>
@@ -89,29 +93,92 @@
                     <Style TargetType="ListViewItem">
                         <Setter Property="Template">
                             <Setter.Value>
-                                <ControlTemplate>
-                                    <StackPanel Margin="7, 3, 7, 3">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Sender.Username}"
-                                                       Foreground="White"
-                                                       FontSize="20"
-                                                       VerticalAlignment="Bottom"/>
-                                            <TextBlock Text="{Binding DateTime}"
-                                                   Foreground="Gray"
-                                                   FontSize="12"
-                                                   Margin="10, 0, 0, 2"
-                                                   VerticalAlignment="Bottom"/>
-                                        </StackPanel>
-                                        <TextBlock Text="{Binding Text}"
-                                               Foreground="White"
-                                               FontSize="15"
-                                               TextWrapping="Wrap"/>
-                                    </StackPanel>
+                                <ControlTemplate TargetType="ListViewItem">
+                                    <ContentPresenter />
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                        </Trigger>
+                                        <Trigger Property="IsFocused" Value="True">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
                     </Style>
                 </ListView.ItemContainerStyle>
+                <ListView.Resources>
+                    <DataTemplate DataType="{x:Type dto:TextMessage}">
+                        <StackPanel Margin="7, 3, 7, 3">
+                            <Separator Background="#474747"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Sender.Username}"
+                                           Foreground="White"
+                                           FontSize="20"
+                                           VerticalAlignment="Bottom"/>
+                                <TextBlock Text="{Binding DateTime}"
+                                           Foreground="Gray"
+                                           FontSize="12"
+                                           Margin="10, 0, 0, 2"
+                                           VerticalAlignment="Bottom"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Text}"
+                                       Foreground="White"
+                                       FontSize="15"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type chat:MessageViewModel}">
+                        <StackPanel Margin="7, 3, 7, 3">
+                            <Separator Background="#474747"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Sender.Username}"
+                                           Foreground="White"
+                                           FontSize="20"
+                                           VerticalAlignment="Bottom"/>
+                                <TextBlock Text="{Binding DateTime}"
+                                           Foreground="Gray"
+                                           FontSize="12"
+                                           Margin="10, 0, 0, 2"
+                                           VerticalAlignment="Bottom"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Text}"
+                                       Foreground="White"
+                                       FontSize="15"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type dto:FileMessage}">
+                        <StackPanel Margin="7, 3, 7, 3">
+                            <Separator Background="#474747"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Sender.Username}"
+                                           Foreground="White"
+                                           FontSize="20"
+                                           VerticalAlignment="Bottom"/>
+                                <TextBlock Text="{Binding DateTime}"
+                                           Foreground="Gray"
+                                           FontSize="12"
+                                           Margin="10, 0, 0, 2"
+                                           VerticalAlignment="Bottom"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Text}"
+                                       Foreground="White"
+                                       FontSize="15"
+                                       TextWrapping="Wrap"/>
+                            <Button Content="📥"
+                                    HorizontalAlignment="Left"
+                                    FontSize="20"
+                                    Margin="10, 0, 0, 0"
+                                    Style="{StaticResource DownloadButtonStyle}"
+                                    Command="{Binding DataContext.DownloadFileCommand,
+                                 RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding Text}">
+                            </Button>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.Resources>
             </ListView>
             <Grid Grid.Row="1">
                 <Border Margin="10, 5, 10, 0"
@@ -126,7 +193,6 @@
                                 FontWeight="Bold"
                                 Content="🗎"
                                 Command="{Binding ChooseFileCommand}"/>
-                        
                         <TextBox
                             Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
                             FontSize="20"
@@ -147,35 +213,12 @@
                     </DockPanel>
                 </Border>
             </Grid>
-            
-            <!-- <TextBox Grid.Row="1" -->
-            <!--     Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" -->
-            <!--     Margin="10, 5, 10, 0" -->
-            <!--     FontSize="20" -->
-            <!--     Background="#383a40" -->
-            <!--     BorderThickness="0" -->
-            <!--     Padding="10, 0, 10, 0" -->
-            <!--     Foreground="White" -->
-            <!--     VerticalAlignment="Top" -->
-            <!--     Height="50" -->
-            <!--     MaxLength="100" -->
-            <!--     VerticalContentAlignment="Center" -->
-            <!--     TextWrapping="Wrap"> -->
-            <!--     <TextBox.Resources> -->
-            <!--         <Style TargetType="Border"> -->
-            <!--             <Setter Property="CornerRadius" Value="10"></Setter> -->
-            <!--         </Style> -->
-            <!--     </TextBox.Resources> -->
-            <!--     <TextBox.InputBindings> -->
-            <!--         <KeyBinding Key="Enter" -->
-            <!--                     Command="{Binding SendMessageCommand}"/> -->
-            <!--     </TextBox.InputBindings> -->
-            <!-- </TextBox> -->
         </Grid>
         <Grid Grid.Column="2" Background="#2b2d31">
             <Grid.RowDefinitions>
                 <RowDefinition Height="50"></RowDefinition>
                 <RowDefinition></RowDefinition>
+                <RowDefinition Height="50"></RowDefinition>
             </Grid.RowDefinitions>
             <Label Content="- Private Chats -"
                    Grid.Row="0"
@@ -184,6 +227,7 @@
                    FontSize="25"/>
             <ListView Grid.Row="1"
                       Background="#2b2d31"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       BorderThickness="0"
                       ItemsSource="{Binding PrivateChats}"
                       SelectedItem="{Binding SelectedChat, Mode=TwoWay}">
@@ -197,11 +241,13 @@
                                             Height="50"
                                             CornerRadius="4"
                                             Margin="8, 2, 8, 2">
-                                        <TextBlock Text="{Binding Name}"
-                                                   Foreground="LightGray"
-                                                   FontSize="25"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Center"/>
+                                        <Viewbox StretchDirection="DownOnly">
+                                            <TextBlock Text="{Binding Name}"
+                                                       Foreground="LightGray"
+                                                       FontSize="25"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"/>
+                                        </Viewbox>
                                     </Border>
                                 </ControlTemplate>
                             </Setter.Value>
@@ -209,6 +255,25 @@
                     </Style>
                 </ListView.ItemContainerStyle>
             </ListView>
+            <Grid Grid.Row="2" Background="#1e1f22">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50"></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        FontSize="25"
+                        Margin="5"
+                        Content="🡄"
+                        Command="{Binding OpenPluginWindowCommand}"/>
+                <TextBlock Text="PLUGINS"
+                           Grid.Column="1"
+                           VerticalAlignment="Center"
+                           Margin="5, 0, 0, 0"
+                           Padding="15, 0, 0, 0"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="White"
+                           FontSize="25"/>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

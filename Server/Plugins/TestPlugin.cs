@@ -3,10 +3,11 @@ using de.hsfl.vs.hul.chatApp.contract;
 
 namespace de.hsfl.vs.hul.chatApp.server.Plugins;
 
+[Serializable]
 public class TestPlugin //: IPlugin
 {
-    public void DoSomething()
+    public void Install(IChatClient icChatClient)
     {
-        Console.WriteLine($"Plugin: {GetType().Name}");
+        
     }
 }

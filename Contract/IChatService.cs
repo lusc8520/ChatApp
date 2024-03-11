@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.IO;
 using System.Reflection;
 using System.ServiceModel;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
@@ -15,6 +15,8 @@ public interface IChatService
     void Connect();
     [OperationContract]
     LoginResponse Login(string username, string password);
+    [OperationContract(IsOneWay = true)]
+    public void Logout(int userId);
 
     [OperationContract]
     LoginResponse Register(string username, string password);
@@ -26,20 +28,23 @@ public interface IChatService
     IEnumerable<UserDto> FetchUsers();
 
     [OperationContract(IsOneWay = true)]
-    void BroadcastMessage(MessageDto messageDto);
+    void BroadcastMessage(TextMessage textMessage);
 
     [OperationContract(IsOneWay = true)]
-    void SendPrivateMessage(MessageDto messageDto);
+    void SendPrivateMessage(IMessageDto textMessage);
 
     [OperationContract]
-    IEnumerable<MessageDto> FetchMessages(int chatRoomId);
+    IEnumerable<IMessageDto> FetchMessages(int chatRoomId);
 
     [OperationContract]
-    IEnumerable<MessageDto> FetchPrivateMessages(int user1, int user2);
+    IEnumerable<IMessageDto> FetchPrivateMessages(int user1, int user2);
 
     [OperationContract(IsOneWay = true)]
-    void UploadPdf(byte[] bytes);
-    
+    void UploadFile(byte[] bytes, string filename, string fileExtension, UserDto sender, int chatId, bool isPrivate);
+
+    [OperationContract]
+    byte[] DownloadFile(string filename);
+
     [OperationContract]
     byte[] FetchPlugins();
 }
@@ -53,8 +58,9 @@ static class Helper
             typeof(LoginResponse),
             typeof(UserDto),
             typeof(ChatRoom),
-            typeof(MessageDto),
-            typeof(IPlugin)
+            typeof(TextMessage),
+            typeof(FileMessage),
+            typeof(IMessageDto)
         };
     }
 }

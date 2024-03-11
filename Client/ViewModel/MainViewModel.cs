@@ -1,6 +1,7 @@
 using System;
 using System.ServiceModel;
 using System.Threading.Tasks;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
@@ -13,6 +14,7 @@ public partial class MainViewModel : ObservableObject
       public RegisterViewModel RegisterViewModel { get; }
       public ChatViewModel ChatViewModel { get; }
       public ChatClient ChatClient { get; }
+      public PluginWindowViewModel PluginWindowViewModel { get; }
 
       private ObservableObject _currentView;
       public ObservableObject CurrentView
@@ -71,12 +73,19 @@ public partial class MainViewModel : ObservableObject
             // inject dependencies into the other view models
             LoginViewModel = new LoginViewModel(this);
             RegisterViewModel = new RegisterViewModel(this);
+            PluginWindowViewModel = new PluginWindowViewModel(ChatClient);
             ChatViewModel = new ChatViewModel(this);
             // set default navigation
             CurrentView = LoginViewModel;
+
+            Application.Current.Exit += (_, _) =>
+            {
+                  if (User == null) return;
+                  ChatClient.Logout(User.Id);
+            };
             
             // login instantly for testing
-            // ChatClient.Login("user", "user");
+            ChatClient.Login("user", "user");
       }
 
       [RelayCommand]

@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -8,6 +8,8 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input.StylusPlugIns;
+using de.hsfl.vs.hul.chatApp.client.ViewModel;
 using de.hsfl.vs.hul.chatApp.client.ViewModel.Chat;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
@@ -19,20 +21,26 @@ public class ChatClient : IChatClient
     public event Action<LoginResponse> LoginSuccess;
     public event Action<LoginResponse> LoginFailed;
     public event Action LogoutSuccess;
-    public event Action<MessageDto> BroadcastReceived;
+    public event Action<IMessageDto> BroadcastReceived;
     public event Action<UserDto> UserReceived; 
-    public event Action<MessageDto> PrivateMessageReceived; 
+    public event Action<IMessageDto> PrivateMessageReceived; 
+    public event Action<IMessageDto> MessageReceiving;
     public event Action GlobalChatsFetched;
-    public event Action<MessageDto> MessageReceiving;
-    
+
+    private DuplexChannelFactory<IChatService> _factory;
     private IChatService _chatService;
     public ChatClient()
     {
-        var factory = new DuplexChannelFactory<IChatService>(
+        var binding = new NetTcpBinding
+        {
+            MaxReceivedMessageSize = 5000000, // = 5mb for pdf upload
+            MaxBufferSize = 5000000
+        };
+        _factory = new DuplexChannelFactory<IChatService>(
             new InstanceContext(this),
-            new NetTcpBinding(),
+            binding,
             "net.tcp://localhost:9000/chatApp");
-        _chatService = factory.CreateChannel();
+        _chatService = _factory.CreateChannel();
         
         // erste verbindung zum server aufbauen
         // ohne dies hat die erste login/register anfrage ein wenig länger gedauert
@@ -43,17 +51,18 @@ public class ChatClient : IChatClient
         Console.WriteLine("connected to server!");
     }
 
-    public void ReceiveBroadcast(MessageDto messageDto)
+    public void ReceiveBroadcast(IMessageDto textMessage)
     {
-        MessageReceiving?.Invoke(messageDto);  
-        Console.WriteLine("Test: " + messageDto.Text);
-        BroadcastReceived?.Invoke(messageDto);
+        var msg = MessageViewModel.FromDto(textMessage);
+        MessageReceiving?.Invoke(msg);
+        BroadcastReceived?.Invoke(msg);
     }
 
-    public void ReceivePrivateMessage(MessageDto messageDto)
+    public void ReceivePrivateMessage(IMessageDto textMessage)
     {
-        MessageReceiving?.Invoke(messageDto);
-        PrivateMessageReceived?.Invoke(messageDto);
+        var msg = MessageViewModel.FromDto(textMessage);
+        MessageReceiving?.Invoke(msg);
+        PrivateMessageReceived?.Invoke(msg);
     }
 
     public void ReceiveNewUser(UserDto user)
@@ -129,16 +138,27 @@ public class ChatClient : IChatClient
         }
     }
 
-    public void Logout()
+    public void Logout(int userId)
     {
-        // TODO send logout message to server ?
+        _chatService.Logout(userId);
         LogoutSuccess?.Invoke();
     }
 
-    public void UploadPdf(byte[] bytes)
+    public void UploadFile(byte[] bytes, string filename, string fileExtension, UserDto sender, int chatId, bool isPrivate)
     {
-        Console.WriteLine("huh");
-        _chatService.UploadPdf(bytes);
+        Execute(() => {_chatService.UploadFile(bytes, filename, fileExtension, sender, chatId, isPrivate);});
+    }
+
+    public void DownloadFile(string filename)
+    {
+        Task.Run(() =>
+        {
+            var bytes = _chatService.DownloadFile(filename);
+            if (bytes.Length <= 0) return;
+            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), filename);
+            File.WriteAllBytes(path, bytes);
+            Process.Start($"{path}");
+        });
     }
 
     public void FetchChats(ObservableCollection<GlobalChat> chats)
@@ -182,39 +202,6 @@ public class ChatClient : IChatClient
         });
     }
 
-    public void FetchPlugins(IPlugin plugins)
-    {
-        var assemblyBytes =_chatService.FetchPlugins();
-        Assembly pluginAssembly = Assembly.Load(assemblyBytes);
-        foreach (var type in pluginAssembly.GetTypes())
-        {
-            if (typeof(IPlugin).IsAssignableFrom(type))
-            {
-                var plugin = Activator.CreateInstance(type) as IPlugin;
-                if (plugin != null)
-                {
-                    plugins = plugin;
-                    //plugins.Add(plugin);
-                    Console.WriteLine($"Plugin: {plugins.GetType().Name}");
-                    plugin.Install(this);
-                }
-            }
-        }
-        //var translatorPlugin = plugins.First();
-    }
-
-    public void BroadcastMessage(UserDto sender, int chatRoomId, string text)
-    {
-        _chatService.BroadcastMessage(
-            new MessageDto
-            {
-                Sender = sender,
-                Text = text,
-                ChatId = chatRoomId
-            }
-        );
-    }
-
     public void FetchMessages(GlobalChat chat)
     {
         Task.Run(() =>
@@ -222,9 +209,11 @@ public class ChatClient : IChatClient
             var fetchedMessages = _chatService.FetchMessages(chat.Id);
             foreach (var fetchedMessage in fetchedMessages)
             {
+                var msg = MessageViewModel.FromDto(fetchedMessage);
+                MessageReceiving?.Invoke(msg);
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    chat.Messages.Add(fetchedMessage);
+                    chat.Messages.Add(msg);
                 });
             }
         });
@@ -237,22 +226,70 @@ public class ChatClient : IChatClient
             var fetchedMessages = _chatService.FetchPrivateMessages(userId, chat.Id);
             foreach (var fetchedMessage in fetchedMessages)
             {
+                var msg = MessageViewModel.FromDto(fetchedMessage);
+                MessageReceiving?.Invoke(msg);
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    chat.Messages.Add(fetchedMessage);
+                    chat.Messages.Add(msg);
                 });
             }
         });
+    }
+    
+    public void FetchPlugins(ObservableCollection<string> pluginsName)
+    {
+         var assemblyBytes =_chatService.FetchPlugins();
+         Assembly pluginAssembly = Assembly.Load(assemblyBytes);
+         foreach (var type in pluginAssembly.GetTypes())
+         {
+             if (typeof(IPlugin).IsAssignableFrom(type))
+             {
+                 var pluginName = type.Name;
+                 pluginsName.Add(pluginName);
+                 Console.WriteLine(pluginName);
+             }
+         }
+    }
+    
+    public async void InstallPlugin(string pluginName, ObservableCollection<IPlugin> plugins, PluginWindowViewModel pvm)
+    {
+        var assemblyBytes =_chatService.FetchPlugins();
+        Assembly pluginAssembly = Assembly.Load(assemblyBytes);
+        foreach (var type in pluginAssembly.GetTypes())
+        {
+            if (typeof(IPlugin).IsAssignableFrom(type))
+            {
+                if (pluginName == type.Name)
+                {
+                    var plugin = Activator.CreateInstance(type) as IPlugin;
+                    plugin.Install(this);
+                    plugins.Add(plugin);
+                    pvm.PluginOptions = await plugin.GetPluginOptions();
+                    Console.WriteLine($"Plugin: {plugin.GetType().Name}");
+                }
+            }
+        }
     }
 
     public void SendPrivateMessage(UserDto sender, int receiverId, string text)
     {
         _chatService.SendPrivateMessage(
-            new MessageDto
+            new TextMessage
             {
                 Sender = sender,
                 ChatId = receiverId,
                 Text = text
+            }
+        );
+    }
+    public void BroadcastMessage(UserDto sender, int chatRoomId, string text)
+    {
+        _chatService.BroadcastMessage(
+            new TextMessage
+            {
+                Sender = sender,
+                Text = text,
+                ChatId = chatRoomId
             }
         );
     }

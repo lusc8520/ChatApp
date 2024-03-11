@@ -3,10 +3,15 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using de.hsfl.vs.hul.chatApp.client.View;
 using de.hsfl.vs.hul.chatApp.client.ViewModel.Chat;
 using de.hsfl.vs.hul.chatApp.contract;
+using de.hsfl.vs.hul.chatApp.contract.DTO;
+using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.Win32;
 
 namespace de.hsfl.vs.hul.chatApp.client.ViewModel;
@@ -17,8 +22,9 @@ public partial class ChatViewModel : ObservableObject
     public MainViewModel MainViewModel { get; }
     public ObservableCollection<GlobalChat> GlobalChats { get; set; } = new();
     public ObservableCollection<PrivateChat> PrivateChats { get; set; } = new();
-    public ObservableCollection<IPlugin> Plugins { get; set; } = new();
-    public IPlugin Plugin { get; set; }
+    private ObservableCollection<string> PluginsName { get; set; } = new();
+    
+    private readonly PluginWindowViewModel _pluginWindowViewModel;
     
     private IChat _selectedChat;
     public IChat SelectedChat
@@ -55,6 +61,7 @@ public partial class ChatViewModel : ObservableObject
     {
         MainViewModel = mvm;
         ChatClient = MainViewModel.ChatClient;
+        _pluginWindowViewModel = mvm.PluginWindowViewModel;
         // set up client events
         ChatClient.UserReceived += user =>
         {
@@ -72,6 +79,7 @@ public partial class ChatViewModel : ObservableObject
         ChatClient.LoginSuccess += _ =>
         {
             if (ChatsFetched) return;
+            FetchPlugins();
             ChatClient.FetchChats(PrivateChats);
             ChatClient.FetchChats(GlobalChats);
             ChatsFetched = true;
@@ -82,7 +90,6 @@ public partial class ChatViewModel : ObservableObject
             if (chat == null) return;
             if (!chat.HasFetched) return;
             chat.Messages.Add(message);
-            Console.WriteLine("ViewModel: " + message.Text);
         };
         ChatClient.PrivateMessageReceived += message =>
         {
@@ -96,7 +103,7 @@ public partial class ChatViewModel : ObservableObject
     [RelayCommand]
     private void Logout()
     {
-        ChatClient.Logout();
+        ChatClient.Logout(MainViewModel.User.Id);
     }
 
     [RelayCommand]
@@ -113,21 +120,55 @@ public partial class ChatViewModel : ObservableObject
         var ofd = new OpenFileDialog
         {
             DefaultExt = ".pdf",
-            Filter = "PDF Files (*.pdf)|*.pdf"
+            Filter = "PDF Files (*.pdf)|*.pdf" +
+                     "|PNG Files (*.png)|*.png" +
+                     "|JPEG Files (*.jpg;*.jpeg)|*.jpg;*.jpeg" +
+                     "|Text Files (*.txt)|*.txt"
         };
         var result = ofd.ShowDialog();
         if (result ?? false)
         {
             var stream = ofd.OpenFile();
+            if (stream.Length > 5000000)
+            {
+                new ToastContentBuilder()
+                    .AddText("file is too large (max is 5mb)")
+                    .Show();
+                return;
+            }
             var bytes = new byte[stream.Length];
-            var k = stream.Read(bytes, 0, (int)stream.Length);
-            ChatClient.UploadPdf(bytes);
+            stream.Read(bytes, 0, (int)stream.Length);
+            
+            ChatClient.UploadFile(bytes,
+                Path.GetFileNameWithoutExtension(ofd.FileName), 
+                Path.GetExtension(ofd.FileName),
+                MainViewModel.User,
+                _selectedChat.Id,
+                _selectedChat is PrivateChat
+            );
         }
     }
 
     [RelayCommand]
-    private void InstallPlugin()
+    private void DownloadFile(string filename)
     {
-        ChatClient.FetchPlugins(Plugin);
+        ChatClient.DownloadFile(filename);
+    }
+    
+    [RelayCommand]
+    private void FetchPlugins()
+    {
+        ChatClient.FetchPlugins(PluginsName);
+    }
+
+    [RelayCommand]
+    private void OpenPluginWindow()
+    {
+        _pluginWindowViewModel.PluginsName = PluginsName;
+        var pluginWindow = new PluginWindow
+        {
+            DataContext = _pluginWindowViewModel
+        };
+        pluginWindow.Show();
     }
 }

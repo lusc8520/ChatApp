@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.ServiceModel;
 using System.Threading.Tasks;
@@ -14,13 +14,13 @@ using Dapper.Contrib.Extensions;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
 using de.hsfl.vs.hul.chatApp.server.DAO;
-using de.hsfl.vs.hul.chatApp.server.Plugins;
 
 namespace de.hsfl.vs.hul.chatApp.server;
 
 [ServiceBehavior(
     InstanceContextMode = InstanceContextMode.PerCall,
-    IncludeExceptionDetailInFaults = true)]
+    IncludeExceptionDetailInFaults = true
+    )]
 public class ChatService : IChatService
 {
     private static readonly string DbPath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.FullName + "/data.db";
@@ -46,23 +46,43 @@ public class ChatService : IChatService
     {
         var db = new SQLiteConnection($"Data Source={DbPath}");
         db.Open();
-        // get user with the given username from the db
         var user = db.QuerySingleOrDefault<UserDao?>(
             $"select * from Users where username = @Username", 
             new {Username = username}
         );
         db.Close();
+        // check if user exists
         if (user != null && user.Password == password)
         {
+            // user exists -> check if already logged in
+            if (Clients.TryGetValue(user.Id, out IChatClient client))
+            {
+                try
+                {
+                    client.Connect();
+                    Console.WriteLine("huhh");
+                    // user is already logged in
+                    return new LoginResponse { Text = $"{user.Username} is already logged in" };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
             // login success
             ConnectToGlobalChat(user.Id, OperationContext.Current.GetCallbackChannel<IChatClient>());
             return new LoginResponse { UserDto = user.ToDto()};
         }
-        // login failed
+        // user does not exist
         return new LoginResponse
         {
             Text = "wrong username or password"
         };
+    }
+
+    public void Logout(int userId)
+    {
+        Clients.TryRemove(userId, out _);
     }
 
     public LoginResponse Register(string username, string password)
@@ -125,12 +145,12 @@ public class ChatService : IChatService
         ).Select(user => user.ToDto());
         return users;
     }
-    
-    public void BroadcastMessage(MessageDto messageDto)
+
+    public void BroadcastMessage(TextMessage textMessage)
     {
-        messageDto.DateTime = DateTime.Now;
-        SaveMessage(messageDto, false); // safe message asynchronously
-        Broadcast(client => client.Value.ReceiveBroadcast(messageDto)); // broadcast message asynchronously
+        textMessage.DateTime = DateTime.Now;
+        SaveMessage(textMessage); // safe message asynchronously
+        Broadcast(client => client.Value.ReceiveBroadcast(textMessage)); // broadcast message asynchronously
     }
 
     private async Task Broadcast(Action<KeyValuePair<int, IChatClient>> a)
@@ -152,61 +172,56 @@ public class ChatService : IChatService
         });
     }
 
-    private async Task SaveMessage(MessageDto messageDto, bool isPrivate)
+    private async Task SaveMessage(IMessageDto textMessage, bool isPrivate = false, bool isFile = false)
     {
         await Task.Run(() =>
         {
             var db = new SQLiteConnection($"Data Source={DbPath}");
-            var message = MessageDao.FromDto(messageDto);
+            var message = MessageDao.FromDto(textMessage);
             message.IsPrivate = isPrivate;
+            message.isFile = isFile;
             db.Open();
             db.Insert(message);
             db.Close();
         });
     }
 
-    public void SendPrivateMessage(MessageDto messageDto)
+    public void SendPrivateMessage(IMessageDto textMessage)
     {
         var now = DateTime.Now;
-        messageDto.DateTime = now;
-        SaveMessage(messageDto, true); // safe message asynchronously
+        textMessage.DateTime = now;
+        SaveMessage(textMessage, true); // safe message asynchronously
         // first send message back to sender
         // only if the sender and receiver are not the same
-        // start it in a task so that sending to receiver can happen instantly
-        Task.Run(() =>
+        if (textMessage.Sender.Id != textMessage.ChatId)
         {
-            if (messageDto.Sender.Id == messageDto.ChatId) return;
             try
             {
-                Clients[messageDto.Sender.Id].ReceivePrivateMessage(messageDto);
+                Clients[textMessage.Sender.Id].ReceivePrivateMessage(textMessage);
             }
             catch (Exception e)
             {
-                Clients.TryRemove(messageDto.ChatId, out _);
+                Clients.TryRemove(textMessage.ChatId, out _);
                 Console.WriteLine(e);
             }
-        });
+        }
         
         // send message to receiver
         // set the ChatId to the id of the sender so it shows up as the senders message
+        var receiverId = textMessage.ChatId;
+        textMessage.ChatId = textMessage.Sender.Id;
         try
         {
-            Clients[messageDto.ChatId].ReceivePrivateMessage( new MessageDto
-            {
-                Sender = messageDto.Sender,
-                ChatId = messageDto.Sender.Id,
-                Text = messageDto.Text,
-                DateTime = now
-            });
+            Clients[receiverId].ReceivePrivateMessage(textMessage);
         }
         catch (Exception e)
         {
-            Clients.TryRemove(messageDto.ChatId, out _);
+            Clients.TryRemove(receiverId, out _);
             Console.WriteLine(e);
         }
     }
-
-    public IEnumerable<MessageDto> FetchMessages(int chatRoomId)
+    
+    public IEnumerable<IMessageDto> FetchMessages(int chatRoomId)
     {
         var db = new SQLiteConnection($"Data Source={DbPath}");
         db.Open();
@@ -223,7 +238,7 @@ public class ChatService : IChatService
             .Select(message => message.ToDto(new SQLiteConnection($"Data Source={DbPath}")));
     }
 
-    public IEnumerable<MessageDto> FetchPrivateMessages(int user1, int user2)
+    public IEnumerable<IMessageDto> FetchPrivateMessages(int user1, int user2)
     {
         var db = new SQLiteConnection($"Data Source={DbPath}");
         db.Open();
@@ -239,9 +254,46 @@ public class ChatService : IChatService
             .Select(message => message.ToDto(new SQLiteConnection($"Data Source={DbPath}")));
     }
 
-    public void UploadPdf(byte[] bytes)
+    public void UploadFile(byte[] bytes, string filename, string fileExtension, UserDto sender, int chatId, bool isPrivate)
     {
-        File.WriteAllBytes(UploadPath + "something.pdf",bytes);
+        var name = $"{filename}{fileExtension}";
+        var suffix = 2;
+        while (File.Exists(Path.Combine(UploadPath, name)))
+        {
+            name = $"{filename}[{suffix}]{fileExtension}";
+            suffix++;
+        }
+        File.WriteAllBytes(Path.Combine(UploadPath, name), bytes);
+        var message = new FileMessage
+        {
+            Sender = sender,
+            Text = name,
+            ChatId = chatId,
+            DateTime = DateTime.Now
+        };
+        Task.Run(() =>
+        {
+            if (!isPrivate)
+            {
+                Broadcast(pair => pair.Value.ReceiveBroadcast(message));
+            }
+            else
+            {
+                SendPrivateMessage(message);
+            }
+        });
+        SaveMessage(message, isPrivate, true);
+    }
+
+    public byte[] DownloadFile(string filename)
+    {
+        var path = Path.Combine(UploadPath, filename);
+        var bytes = Array.Empty<byte>();
+        if (File.Exists(path))
+        {
+            bytes = File.ReadAllBytes(path);
+        }
+        return bytes;
     }
 
     private bool ValidateInput(string? username, string? password)
@@ -249,7 +301,6 @@ public class ChatService : IChatService
         if (username == null || password == null) return false;
         return !(username.Length < 3 || password.Length < 3);
     }
-    
     public byte[] FetchPlugins()
     {
         Assembly currentAssembly = Assembly.GetExecutingAssembly();

@@ -14,31 +14,38 @@ public class MessageDao
     public int ChatRoomId { get; set; }
     public string Text { get; set; }
     public DateTime DateTime { get; set; }
-    
     public bool IsPrivate { get; set; }
+    public bool isFile { get; set; }
 
-    public static MessageDao FromDto(MessageDto message)
+    public static MessageDao FromDto(IMessageDto textMessage)
     {
         return new MessageDao
         {
-            SenderId = message.Sender.Id,
-            ChatRoomId = message.ChatId,
-            Text = message.Text,
-            DateTime = message.DateTime
+            SenderId = textMessage.Sender.Id,
+            ChatRoomId = textMessage.ChatId,
+            Text = textMessage.Text,
+            DateTime = textMessage.DateTime
         };
     }
 
-    public MessageDto ToDto(SQLiteConnection db)
+    public IMessageDto ToDto(SQLiteConnection db)
     {
         db.Open();
-        var user = db.QuerySingle<UserDao?>("select * from Users where id = @UserId", new {UserId = SenderId});
+        var user = db.QuerySingle<UserDao?>("select * from Users where id = @UserId", new {UserId = SenderId})?.ToDto();
         db.Close();
-        return new MessageDto
+        IMessageDto message;
+        if (isFile)
         {
-            Sender = user?.ToDto(),
-            ChatId = ChatRoomId,
-            Text = Text,
-            DateTime = DateTime
-        };
+            message = new FileMessage();
+        }
+        else
+        {
+            message = new TextMessage();
+        }
+        message.Sender = user;
+        message.Text = Text;
+        message.ChatId = ChatRoomId;
+        message.DateTime = DateTime;
+        return message;
     }
 }

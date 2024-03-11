@@ -4,23 +4,22 @@ using de.hsfl.vs.hul.chatApp.contract.DTO;
 
 namespace de.hsfl.vs.hul.chatApp.contract;
 
-[ServiceKnownType("GetKnownTypes", typeof(Helper))]
+
 [ServiceContract]
+[ServiceKnownType("GetKnownTypes", typeof(Helper))]
 public interface IChatClient
 {
+    public event Action<IMessageDto> MessageReceiving;
+    
     [OperationContract(IsOneWay = true)]
     void Connect();
 
     [OperationContract(IsOneWay = true)]
-    [ServiceKnownType(typeof(MessageDto))]
-    void ReceiveBroadcast(MessageDto messageDto);
-    
+    [ServiceKnownType(typeof(TextMessage))]
+    void ReceiveBroadcast(IMessageDto textMessage);
     [OperationContract(IsOneWay = true)]
-    [ServiceKnownType(typeof(MessageDto))]
-    void ReceivePrivateMessage(MessageDto messageDto);
-    
+    [ServiceKnownType(typeof(TextMessage))]
+    void ReceivePrivateMessage(IMessageDto textMessage);
     [OperationContract(IsOneWay = true)]
     void ReceiveNewUser(UserDto user);
-    
-    public event Action<MessageDto> MessageReceiving;
 }
