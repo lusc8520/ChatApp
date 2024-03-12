@@ -55,8 +55,8 @@ public partial class PluginViewModel : ObservableObject
                 MessageBoxImage.Information);
         }
         else
-        {
-            IsPluginAvailable = _chatClient.FetchAndInstallPlugin(this);
+        { 
+            _chatClient.FetchAndInstallPlugin(this);
         }
     }
     
