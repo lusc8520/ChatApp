@@ -190,7 +190,7 @@ public class ChatService : IChatService
     {
         var now = DateTime.Now;
         textMessage.DateTime = now;
-        SaveMessage(textMessage, true); // safe message asynchronously
+        SaveMessage(textMessage, true).Wait();
         // first send message back to sender
         // only if the sender and receiver are not the same
         if (textMessage.Sender.Id != textMessage.ChatId)

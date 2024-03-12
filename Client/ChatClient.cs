@@ -155,10 +155,13 @@ public class ChatClient : IChatClient
     {
         Task.Run(() =>
         {
-            var bytes = _chatService.DownloadFile(filename);
-            if (bytes.Length <= 0) return;
             var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), filename);
-            File.WriteAllBytes(path, bytes);
+            if (!File.Exists(path))
+            {
+                var bytes = _chatService.DownloadFile(filename);
+                if (bytes.Length <= 0) return;
+                File.WriteAllBytes(path, bytes);
+            }
             Process.Start($"{path}");
         });
     }
