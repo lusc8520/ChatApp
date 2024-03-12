@@ -22,7 +22,6 @@ public partial class ChatViewModel : ObservableObject
     public MainViewModel MainViewModel { get; }
     public ObservableCollection<GlobalChat> GlobalChats { get; set; } = new();
     public ObservableCollection<PrivateChat> PrivateChats { get; set; } = new();
-    private ObservableCollection<string> PluginsName { get; set; } = new();
     
     private readonly PluginWindowViewModel _pluginWindowViewModel;
     
@@ -79,9 +78,9 @@ public partial class ChatViewModel : ObservableObject
         ChatClient.LoginSuccess += _ =>
         {
             if (ChatsFetched) return;
-            FetchPlugins();
             ChatClient.FetchChats(PrivateChats);
             ChatClient.FetchChats(GlobalChats);
+            ChatClient.FetchPluginsName(_pluginWindowViewModel.Plugins);
             ChatsFetched = true;
         };
         ChatClient.BroadcastReceived += message =>
@@ -154,17 +153,10 @@ public partial class ChatViewModel : ObservableObject
     {
         ChatClient.DownloadFile(filename);
     }
-    
-    [RelayCommand]
-    private void FetchPlugins()
-    {
-        ChatClient.FetchPlugins(PluginsName);
-    }
 
     [RelayCommand]
     private void OpenPluginWindow()
     {
-        _pluginWindowViewModel.PluginsName = PluginsName;
         var pluginWindow = new PluginWindow
         {
             DataContext = _pluginWindowViewModel

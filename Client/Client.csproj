@@ -70,6 +70,7 @@
         <Compile Include="ViewModel\Chat\PrivateChat.cs" />
         <Compile Include="ViewModel\LoginViewModel.cs" />
         <Compile Include="ViewModel\MainViewModel.cs" />
+        <Compile Include="ViewModel\PluginViewModel.cs" />
         <Compile Include="ViewModel\PluginWindowViewModel.cs" />
         <Compile Include="ViewModel\RegisterViewModel.cs" />
         <Compile Include="View\ChatView.xaml.cs">

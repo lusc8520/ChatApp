@@ -9,6 +9,7 @@ using System.ServiceModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input.StylusPlugIns;
+using Windows.UI.Xaml.Controls;
 using de.hsfl.vs.hul.chatApp.client.ViewModel;
 using de.hsfl.vs.hul.chatApp.client.ViewModel.Chat;
 using de.hsfl.vs.hul.chatApp.contract;
@@ -25,6 +26,7 @@ public class ChatClient : IChatClient
     public event Action<UserDto> UserReceived; 
     public event Action<IMessageDto> PrivateMessageReceived; 
     public event Action<IMessageDto> MessageReceiving;
+    public event Action<IMessageDto> MessageSending;
     public event Action GlobalChatsFetched;
 
     private DuplexChannelFactory<IChatService> _factory;
@@ -236,7 +238,7 @@ public class ChatClient : IChatClient
         });
     }
     
-    public void FetchPlugins(ObservableCollection<string> pluginsName)
+    public void FetchPluginsName(ObservableCollection<PluginViewModel> plugins)
     {
          var assemblyBytes =_chatService.FetchPlugins();
          Assembly pluginAssembly = Assembly.Load(assemblyBytes);
@@ -244,14 +246,12 @@ public class ChatClient : IChatClient
          {
              if (typeof(IPlugin).IsAssignableFrom(type))
              {
-                 var pluginName = type.Name;
-                 pluginsName.Add(pluginName);
-                 Console.WriteLine(pluginName);
+                 plugins.Add(new PluginViewModel(type.Name, this));
              }
          }
     }
     
-    public async void InstallPlugin(string pluginName, ObservableCollection<IPlugin> plugins, PluginWindowViewModel pvm)
+    public void FetchAndInstallPlugin(PluginViewModel plugin)
     {
         var assemblyBytes =_chatService.FetchPlugins();
         Assembly pluginAssembly = Assembly.Load(assemblyBytes);
@@ -259,13 +259,20 @@ public class ChatClient : IChatClient
         {
             if (typeof(IPlugin).IsAssignableFrom(type))
             {
-                if (pluginName == type.Name)
+                if (plugin.Name == type.Name)
                 {
-                    var plugin = Activator.CreateInstance(type) as IPlugin;
-                    plugin.Install(this);
-                    plugins.Add(plugin);
-                    pvm.PluginOptions = await plugin.GetPluginOptions();
-                    Console.WriteLine($"Plugin: {plugin.GetType().Name}");
+                    var plg = Activator.CreateInstance(type) as IPlugin;
+                    var result = MessageBox.Show(
+                        "Are you sure you want to install " + plugin.Name + "?", 
+                        "Confirmation", 
+                        MessageBoxButton.YesNo, 
+                        MessageBoxImage.Question);
+                    
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        plg?.Install(this);
+                        plugin.Plugin = plg;
+                    }
                 }
             }
         }
@@ -273,24 +280,28 @@ public class ChatClient : IChatClient
 
     public void SendPrivateMessage(UserDto sender, int receiverId, string text)
     {
+        var newMessage = new TextMessage
+        {
+            Sender = sender,
+            ChatId = receiverId,
+            Text = text
+        };
+        MessageSending?.Invoke(newMessage);
         _chatService.SendPrivateMessage(
-            new TextMessage
-            {
-                Sender = sender,
-                ChatId = receiverId,
-                Text = text
-            }
+            newMessage
         );
     }
     public void BroadcastMessage(UserDto sender, int chatRoomId, string text)
     {
+        var newMessage = new TextMessage
+        {
+            Sender = sender,
+            Text = text,
+            ChatId = chatRoomId
+        };
+        MessageSending?.Invoke(newMessage);
         _chatService.BroadcastMessage(
-            new TextMessage
-            {
-                Sender = sender,
-                Text = text,
-                ChatId = chatRoomId
-            }
+            newMessage
         );
     }
 }

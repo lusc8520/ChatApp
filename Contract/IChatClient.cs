@@ -9,8 +9,6 @@ namespace de.hsfl.vs.hul.chatApp.contract;
 [ServiceKnownType("GetKnownTypes", typeof(Helper))]
 public interface IChatClient
 {
-    public event Action<IMessageDto> MessageReceiving;
-    
     [OperationContract(IsOneWay = true)]
     void Connect();
 
@@ -22,4 +20,7 @@ public interface IChatClient
     void ReceivePrivateMessage(IMessageDto textMessage);
     [OperationContract(IsOneWay = true)]
     void ReceiveNewUser(UserDto user);
+    
+    public event Action<IMessageDto> MessageReceiving;
+    public event Action<IMessageDto> MessageSending;
 }

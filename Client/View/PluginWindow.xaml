@@ -8,22 +8,23 @@
         DataContext="{Binding Source={StaticResource MainViewModel},
         Path=PluginWindowViewModel}">
     <Grid>
-        <ItemsControl ItemsSource="{Binding PluginsName}">
+        <ItemsControl ItemsSource="{Binding Plugins}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Grid Margin="10,10,10,10">
+                    <Grid Margin="10,10,10,10"> 
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="200"/>
                             <ColumnDefinition/>
                         </Grid.ColumnDefinitions>
-                        <Button Content="{Binding}" 
-                                Command="{Binding DataContext.InstallPluginCommand, 
-                                RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
-                                CommandParameter="{Binding}" 
+                        <Button Content="{Binding Name}" 
+                                Command="{Binding FetchAndInstallPluginCommand}" 
+                                Style="{StaticResource PluginButtonStyle}"
                                 Grid.Column="0"/>
-                        <ComboBox Grid.Column="1" 
-                                  ItemsSource="{Binding DataContext.PluginOptions, 
-                                  RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                        <Button Grid.Column="1"
+                                Content="Select Option"
+                                Command="{Binding OpenPluginOptionsCommand}"
+                                Style="{StaticResource PluginButtonStyle}"
+                                Margin="20,0,0,0"/>
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
