@@ -14,6 +14,7 @@ using Dapper.Contrib.Extensions;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
 using de.hsfl.vs.hul.chatApp.server.DAO;
+using Serilog;
 
 namespace de.hsfl.vs.hul.chatApp.server;
 
@@ -36,10 +37,8 @@ public class ChatService : IChatService
 
     private async Task ConnectToGlobalChat(int userId, IChatClient client)
     {
-        await Task.Run(() =>
-        {
-            Clients[userId] = client;
-        });
+        Log.Information($"user connected. userID: {userId}");
+        Clients[userId] = client;
     }
 
     public LoginResponse Login(string username, string password)
@@ -60,8 +59,8 @@ public class ChatService : IChatService
                 try
                 {
                     client.Connect();
-                    Console.WriteLine("huhh");
                     // user is already logged in
+                    Log.Warning($"a user tried to log in with already logged in user. username: {username}");
                     return new LoginResponse { Text = $"{user.Username} is already logged in" };
                 }
                 catch (Exception e)
@@ -73,6 +72,7 @@ public class ChatService : IChatService
             ConnectToGlobalChat(user.Id, OperationContext.Current.GetCallbackChannel<IChatClient>());
             return new LoginResponse { UserDto = user.ToDto()};
         }
+        Log.Warning($"a user tried to log in with wrong data. username: {username}");
         // user does not exist
         return new LoginResponse
         {
@@ -82,6 +82,7 @@ public class ChatService : IChatService
 
     public void Logout(int userId)
     {
+        Log.Information($"user logged out. userID: {userId}");
         Clients.TryRemove(userId, out _);
     }
 
@@ -113,15 +114,16 @@ public class ChatService : IChatService
         db.Open();
         var userId = (int)db.Insert(user);
         db.Close();
+        Log.Information($"new user registered. username: {username}, userID: {userId}");
         user.Id = userId;
+        var userDto = user.ToDto();
         ConnectToGlobalChat(userId, OperationContext.Current.GetCallbackChannel<IChatClient>());
         Broadcast(client =>
         {
             if (client.Key == userId) return;
-            client.Value.ReceiveNewUser(user.ToDto());
+            client.Value.ReceiveNewUser(userDto);
         });
-        return new LoginResponse {UserDto = user.ToDto()};
-        // TODO: broadcast the new user for private chat
+        return new LoginResponse {UserDto = userDto};
     }
 
     public IEnumerable<ChatRoom> FetchChatRooms()
@@ -165,6 +167,7 @@ public class ChatService : IChatService
                 }
                 catch (Exception e)
                 {
+                    Log.Warning($"a client could not be reached from {a.Method}.receiver: {client.Key}.  Exception: {e}");
                     Clients.TryRemove(client.Key, out _);
                     Console.WriteLine(e);
                 }
@@ -174,49 +177,45 @@ public class ChatService : IChatService
 
     private async Task SaveMessage(IMessageDto textMessage, bool isPrivate = false, bool isFile = false)
     {
-        await Task.Run(() =>
-        {
-            var db = new SQLiteConnection($"Data Source={DbPath}");
-            var message = MessageDao.FromDto(textMessage);
-            message.IsPrivate = isPrivate;
-            message.isFile = isFile;
-            db.Open();
-            db.Insert(message);
-            db.Close();
-        });
+        var db = new SQLiteConnection($"Data Source={DbPath}");
+        var message = MessageDao.FromDto(textMessage);
+        message.IsPrivate = isPrivate;
+        message.isFile = isFile;
+        db.Open();
+        var id = db.Insert(message);
+        db.Close();
+        Log.Information($"Saved Message. id: {id}, senderId: {message.SenderId}, chatId: {message.ChatRoomId}," +
+                        $"isPrivate: {message.IsPrivate}, isFile: {message.isFile}");
     }
 
-    public void SendPrivateMessage(IMessageDto textMessage)
+    public void SendPrivateMessage(IMessageDto message)
     {
         var now = DateTime.Now;
-        textMessage.DateTime = now;
-        SaveMessage(textMessage, true).Wait();
+        message.DateTime = now;
+        SaveMessage(message, true).Wait();
         // first send message back to sender
         // only if the sender and receiver are not the same
-        if (textMessage.Sender.Id != textMessage.ChatId)
+        if (message.Sender.Id != message.ChatId)
         {
-            try
-            {
-                Clients[textMessage.Sender.Id].ReceivePrivateMessage(textMessage);
-            }
-            catch (Exception e)
-            {
-                Clients.TryRemove(textMessage.ChatId, out _);
-                Console.WriteLine(e);
-            }
+            SendPrivate(message, message.Sender.Id);
         }
-        
         // send message to receiver
         // set the ChatId to the id of the sender so it shows up as the senders message
-        var receiverId = textMessage.ChatId;
-        textMessage.ChatId = textMessage.Sender.Id;
+        var receiverId = message.ChatId;
+        message.ChatId = message.Sender.Id;
+        SendPrivate(message, receiverId);
+    }
+
+    private void SendPrivate(IMessageDto message, int receiverId)
+    {
         try
         {
-            Clients[receiverId].ReceivePrivateMessage(textMessage);
+            Clients[receiverId].ReceivePrivateMessage(message);
         }
         catch (Exception e)
         {
             Clients.TryRemove(receiverId, out _);
+            Log.Warning($"a client could not be reached. receiverID: {receiverId} Exception: {e}");
             Console.WriteLine(e);
         }
     }
@@ -264,6 +263,7 @@ public class ChatService : IChatService
             suffix++;
         }
         File.WriteAllBytes(Path.Combine(UploadPath, name), bytes);
+        Log.Information($"File saved: {name}");
         var message = new FileMessage
         {
             Sender = sender,
@@ -292,6 +292,10 @@ public class ChatService : IChatService
         if (File.Exists(path))
         {
             bytes = File.ReadAllBytes(path);
+        }
+        else
+        {
+            Log.Error($"file does not exist! requested file: {filename}");
         }
         return bytes;
     }

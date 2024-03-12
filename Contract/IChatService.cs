@@ -31,7 +31,7 @@ public interface IChatService
     void BroadcastMessage(TextMessage textMessage);
 
     [OperationContract(IsOneWay = true)]
-    void SendPrivateMessage(IMessageDto textMessage);
+    void SendPrivateMessage(IMessageDto message);
 
     [OperationContract]
     IEnumerable<IMessageDto> FetchMessages(int chatRoomId);

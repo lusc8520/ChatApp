@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
+using Serilog;
 
 namespace de.hsfl.vs.hul.chatApp.client.ViewModel;
 
@@ -27,7 +29,18 @@ public partial class MainViewModel : ObservableObject
                    OnPropertyChanged();
              }
        }
-
+      
+      private string _topBarMessage;
+      public string TopBarMessage
+      {
+            get => _topBarMessage;
+            set
+            {
+                  _topBarMessage = value;
+                  OnPropertyChanged();
+            }
+      }
+      
       private string _serverMessage;
       public string ServerMessage
        {
@@ -53,8 +66,12 @@ public partial class MainViewModel : ObservableObject
 
       public MainViewModel()
       {
-            ChatClient = new ChatClient();
+            // set up global logger
+            Log.Logger = new LoggerConfiguration()
+                  .WriteTo.File("log.txt")
+                  .CreateLogger();
             // set up client events
+            ChatClient = new ChatClient();
             ChatClient.LoginSuccess += response =>
             {
                   User = response.UserDto;
@@ -63,12 +80,28 @@ public partial class MainViewModel : ObservableObject
             ChatClient.LoginFailed += response =>
             {
                   if (CurrentView == ChatViewModel) NavigateToLogin();
+                  User = null;
                   ShowMessage(response.Text);
+            };
+            ChatClient.RequestFailed += () =>
+            {
+                  if (CurrentView == ChatViewModel) NavigateToLogin();
+                  User = null;
+                  ShowMessage("a server error occured");
             };
             ChatClient.LogoutSuccess += () =>
             {
                   User = null;
                   NavigateToLogin();
+            };
+            ChatClient.Connecting += () =>
+            {
+                  Task.Run(async () =>
+                  {
+                        TopBarMessage = "Connecting...";
+                        await Task.Delay(2000);
+                        TopBarMessage = "";
+                  });
             };
             // inject dependencies into the other view models
             LoginViewModel = new LoginViewModel(this);

@@ -97,6 +97,18 @@ public partial class ChatViewModel : ObservableObject
             if (!chat.HasFetched) return;
             chat.Messages.Add(message);
         };
+        ChatClient.RequestFailed += () =>
+        {
+            ResetChats();
+        };
+    }
+
+    private async Task ResetChats()
+    {
+        if (!ChatsFetched) return;
+        GlobalChats.Clear();
+        PrivateChats.Clear();
+        ChatsFetched = false;
     }
 
     [RelayCommand]
@@ -118,7 +130,6 @@ public partial class ChatViewModel : ObservableObject
     {
         var ofd = new OpenFileDialog
         {
-            DefaultExt = ".pdf",
             Filter = "PDF Files (*.pdf)|*.pdf" +
                      "|PNG Files (*.png)|*.png" +
                      "|JPEG Files (*.jpg;*.jpeg)|*.jpg;*.jpeg" +

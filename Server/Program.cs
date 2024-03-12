@@ -13,6 +13,7 @@ using Dapper.Contrib.Extensions;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
 using de.hsfl.vs.hul.chatApp.server.DAO;
+using Serilog;
 
 namespace de.hsfl.vs.hul.chatApp.server;
 
@@ -27,7 +28,8 @@ internal static class Program
             MaxBufferSize = 6000000
         };
         
-        using var serviceHost = new ServiceHost(typeof(ChatService), new Uri("net.tcp://localhost:9000/chatApp"));
+        // simulate services on different servers
+        var serviceHost = new ServiceHost(typeof(ChatService), new Uri($"net.tcp://localhost:9000/chatApp"));
         serviceHost.AddServiceEndpoint(typeof(IChatService), binding, "");
         
         // prepare sql statements
@@ -83,14 +85,11 @@ internal static class Program
         dataBase.Close();
         serviceHost.Open();
         Console.WriteLine("service started!");
-        
-        // plugin test
-        // foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
-        // {
-        //     if (!typeof(IPlugin).IsAssignableFrom(type)) continue;
-        //     var plugin = Activator.CreateInstance(type) as IPlugin;
-        // }
-        
+        // set up global logger
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.File("log.txt")
+            .CreateLogger();
+        Log.Information("server startup");
         Console.ReadLine();
     }
 }

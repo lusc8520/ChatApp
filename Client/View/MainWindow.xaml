@@ -30,6 +30,10 @@
                 <Label Content="ChatApp"
                        Foreground="Gray"
                        HorizontalAlignment="Stretch"/>
+                <Label Content="{Binding TopBarMessage}"
+                       Foreground="IndianRed"
+                       Margin="60, 0, 0, 0">
+                </Label>
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right">
                     
