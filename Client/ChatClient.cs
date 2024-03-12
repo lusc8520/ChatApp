@@ -272,6 +272,11 @@ public class ChatClient : IChatClient
                     {
                         plg?.Install(this);
                         plugin.Plugin = plg;
+                        MessageBox.Show(
+                            plugin.Name + " is installed successfully!", 
+                            "Confirmation", 
+                            MessageBoxButton.OK, 
+                            MessageBoxImage.Information);
                     }
                 }
             }

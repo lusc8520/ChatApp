@@ -47,8 +47,9 @@ public class TranslatorPlugin : IPlugin
         var newWindow = new Window
         {
             Title = "Select Translation Language",
-            Width = 200,
-            Height = 300
+            Width = 250,
+            Height = 300,
+            Background = Brushes.DarkSlateGray
         };
         
         var scrollViewer = new ScrollViewer
@@ -60,6 +61,8 @@ public class TranslatorPlugin : IPlugin
         {
             SelectionMode = SelectionMode.Single,
             Margin = new Thickness(10),
+            Background = Brushes.DarkCyan,
+            Foreground = Brushes.White
         };
         
         listBox.SelectionChanged += ListBox_SelectionChanged;
