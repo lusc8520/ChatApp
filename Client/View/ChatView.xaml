@@ -28,7 +28,7 @@
                    FontSize="25"/>
             <ListView Grid.Row="1" 
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      Background="#2b2d31"
+                      Background="#2B2D31"
                       ItemsSource="{Binding GlobalChats}"
                       BorderThickness="0"
                       SelectedItem="{Binding SelectedChat}">

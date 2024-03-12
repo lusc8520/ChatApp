@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:viewModels="clr-namespace:de.hsfl.vs.hul.chatApp.client.ViewModel"
              xmlns:view="clr-namespace:de.hsfl.vs.hul.chatApp.client.View"
-             xmlns:dto="clr-namespace:de.hsfl.vs.hul.chatApp.contract.DTO;assembly=Contract"
              StartupUri="/View/MainWindow.xaml">
     <Application.Resources>
         
@@ -77,12 +76,13 @@
         
         <!-- Plugin button style -->
         <Style TargetType="Button" x:Key="PluginButtonStyle" BasedOn="{StaticResource ButtonStyleBase}">
-            <Setter Property="Background" Value="#3BB100"/>
+            <Setter Property="Background" Value="DarkSlateGray"/>
             <Setter Property="Height" Value="30"></Setter>
+            <Setter Property="Margin" Value="20,0,20,0"></Setter>
             <Setter Property="Border.CornerRadius" Value="8"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#50B148"/>
+                    <Setter Property="Background" Value="DarkCyan"/>
                 </Trigger>
             </Style.Triggers>
         </Style>

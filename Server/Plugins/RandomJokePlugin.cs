@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
 
@@ -37,8 +38,9 @@ public class RandomJokePlugin : IPlugin
         var newWindow = new Window
         {
             Title = "Select Joke Category",
-            Width = 200,
-            Height = 300
+            Width = 250,
+            Height = 300,
+            Background = Brushes.DarkSlateGray
         };
         
         var scrollViewer = new ScrollViewer
@@ -50,6 +52,8 @@ public class RandomJokePlugin : IPlugin
         {
             SelectionMode = SelectionMode.Single,
             Margin = new Thickness(10),
+            Background = Brushes.DarkCyan,
+            Foreground = Brushes.White
         };
         
         listBox.SelectionChanged += ListBox_SelectionChanged;

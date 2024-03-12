@@ -6,26 +6,31 @@
         mc:Ignorable="d"
         Title="PluginWindow" Height="250" Width="400"
         DataContext="{Binding Source={StaticResource MainViewModel},
-        Path=PluginWindowViewModel}">
+        Path=PluginWindowViewModel}"
+        Background= "#2B2D31">
     <Grid>
         <ItemsControl ItemsSource="{Binding Plugins}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Grid Margin="10,10,10,10"> 
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
-                        <Button Content="{Binding Name}" 
-                                Command="{Binding FetchAndInstallPluginCommand}" 
-                                Style="{StaticResource PluginButtonStyle}"
-                                Grid.Column="0"/>
-                        <Button Grid.Column="1"
-                                Content="Select Option"
-                                Command="{Binding OpenPluginOptionsCommand}"
-                                Style="{StaticResource PluginButtonStyle}"
-                                Margin="20,0,0,0"/>
-                    </Grid>
+                    <Border BorderBrush="White" 
+                            BorderThickness="0.4,0.1,0.4,0.4" 
+                            CornerRadius="10"
+                            Margin="5,20,5,0" >
+                        <Grid Margin="10,10,10,10"> 
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Button Content="{Binding Name}" 
+                                    Command="{Binding FetchAndInstallPluginCommand}" 
+                                    Style="{StaticResource PluginButtonStyle}"
+                                    Grid.Column="0"/>
+                            <Button Grid.Column="1"
+                                    Content="Select Option"
+                                    Command="{Binding OpenPluginOptionsCommand}"
+                                    Style="{StaticResource PluginButtonStyle}"/>
+                        </Grid>
+                    </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
