@@ -251,8 +251,9 @@ public class ChatClient : IChatClient
          }
     }
     
-    public void FetchAndInstallPlugin(PluginViewModel plugin)
+    public bool FetchAndInstallPlugin(PluginViewModel plugin)
     {
+        var successfullyInstalled = false;
         var assemblyBytes =_chatService.FetchPlugins();
         Assembly pluginAssembly = Assembly.Load(assemblyBytes);
         foreach (var type in pluginAssembly.GetTypes())
@@ -277,10 +278,12 @@ public class ChatClient : IChatClient
                             "Confirmation", 
                             MessageBoxButton.OK, 
                             MessageBoxImage.Information);
+                        successfullyInstalled = true;
                     }
                 }
             }
         }
+        return successfullyInstalled;
     }
 
     public void SendPrivateMessage(UserDto sender, int receiverId, string text)

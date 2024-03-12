@@ -1,23 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Media;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
 
 namespace de.hsfl.vs.hul.chatApp.server.Plugins;
 
-[Serializable]
 public class RandomJokePlugin : IPlugin
 {
     private string _selectedJokeCategory = "Puns";
     public void Install(IChatClient chatClient)
     {
         chatClient.MessageSending += Execute;
-        Console.WriteLine("RandomJokePlugin");
     }
 
     private void Execute(IMessageDto messageDto)
@@ -25,11 +21,8 @@ public class RandomJokePlugin : IPlugin
         if (messageDto.Text is "/joke")
         {
             var list = _jokesDictionry[_selectedJokeCategory];
-            if (list != null)
-            {
-                var joke = list[new Random().Next(list.Count)];
-                messageDto.Text = joke;
-            }
+            var joke = list[new Random().Next(list.Count)];
+            messageDto.Text = joke;
         }
     }
     
@@ -56,6 +49,7 @@ public class RandomJokePlugin : IPlugin
             Foreground = Brushes.White
         };
         
+        // Events for selecting a new joke category
         listBox.SelectionChanged += ListBox_SelectionChanged;
         listBox.MouseDoubleClick += ListBox_MouseDoubleClick;
         
@@ -80,6 +74,7 @@ public class RandomJokePlugin : IPlugin
         Window.GetWindow(sender as ListBox)?.Close();
     }
 
+    // set the new selected category
     private void HandleSelectionChange(ListBox? listBox)
     {
         var selectedCategory = listBox?.SelectedItem?.ToString();

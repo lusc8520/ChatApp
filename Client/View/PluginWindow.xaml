@@ -8,6 +8,9 @@
         DataContext="{Binding Source={StaticResource MainViewModel},
         Path=PluginWindowViewModel}"
         Background= "#2B2D31">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
     <Grid>
         <ItemsControl ItemsSource="{Binding Plugins}">
             <ItemsControl.ItemTemplate>
@@ -28,7 +31,8 @@
                             <Button Grid.Column="1"
                                     Content="Select Option"
                                     Command="{Binding OpenPluginOptionsCommand}"
-                                    Style="{StaticResource PluginButtonStyle}"/>
+                                    Style="{StaticResource PluginButtonStyle}"
+                                    Visibility="{Binding IsPluginAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                         </Grid>
                     </Border>
                 </DataTemplate>

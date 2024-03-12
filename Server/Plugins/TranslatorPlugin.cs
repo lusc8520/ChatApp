@@ -3,13 +3,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using de.hsfl.vs.hul.chatApp.contract;
 using de.hsfl.vs.hul.chatApp.contract.DTO;
 using DeepL;
-using DeepL.Model;
 
 namespace de.hsfl.vs.hul.chatApp.server.Plugins;
 
@@ -18,16 +15,20 @@ public class TranslatorPlugin : IPlugin
     private const string AuthKey = "b73d3700-f1f0-4c0c-8bbc-0cbee8230cef:fx";
     private Translator _translator = null!;
     private readonly Dictionary<string, string> _languageCodeMap = new Dictionary<string, string>();
-    private string _selectedLanguage;
+    private string _selectedLanguage = "German";
     
-    public void Install(IChatClient chatClient)
+    public async void Install(IChatClient chatClient)
     {
-        _translator = new(AuthKey);
+        _translator = new Translator(AuthKey);
+        var targetLanguages = await _translator.GetTargetLanguagesAsync();
+        foreach (var lang in targetLanguages)
+        {
+            _languageCodeMap[lang.Name] = lang.Code;
+        }
         chatClient.MessageReceiving += dto =>
         {
             Execute(dto);
         };
-        Console.WriteLine("Translator");
     }
 
     private async Task Execute(IMessageDto message)
@@ -39,7 +40,6 @@ public class TranslatorPlugin : IPlugin
             targetLanguageCode);
         Console.WriteLine(translatedText.Text);
         message.Text = translatedText.Text;
-        Console.WriteLine("Translator: " + message.Text);
     }
 
     public async void OpenPluginOptions()
@@ -65,14 +65,14 @@ public class TranslatorPlugin : IPlugin
             Foreground = Brushes.White
         };
         
+        // Events for selecting a new translation language
         listBox.SelectionChanged += ListBox_SelectionChanged;
         listBox.MouseDoubleClick += ListBox_MouseDoubleClick;
-
-        var targetLanguages = await _translator.GetTargetLanguagesAsync();
-        foreach (var lang in targetLanguages)
+        
+        // Add languages from the language mapping dictionary to listBox
+        foreach (var lang in _languageCodeMap.Keys)
         {
-            _languageCodeMap[lang.Name] = lang.Code;
-            listBox.Items.Add(lang.Name);
+            listBox.Items.Add(lang);
         }
         scrollViewer.Content = listBox;
         newWindow.Content = scrollViewer;
@@ -90,13 +90,13 @@ public class TranslatorPlugin : IPlugin
         Window.GetWindow(sender as ListBox)?.Close();
     }
 
+    // set the new selected language
     private void HandleSelectionChange(ListBox? listBox)
     {
         var selectedLanguage = listBox?.SelectedItem?.ToString();
         if (selectedLanguage != null)
         {
             _selectedLanguage = selectedLanguage;
-            Console.WriteLine($"Selected Language: {_selectedLanguage}");
         }
     }
     
